@@ -1,6 +1,6 @@
-# 1 Getting Started
+# Getting Started
 
-## 1.1 System Requirements
+## System Requirements
 
 - **OS:** Windows (7 or later)
 - **Hardware:** One of the following connection setups:
@@ -19,7 +19,7 @@ The ISPTool repository is available on GitHub — check for the latest updates:
 
 [https://github.com/OpenNuvoton/ISPTool](https://github.com/OpenNuvoton/ISPTool)
 
-## 1.2 Launching the Application
+## Launching the Application
 
 Run **NuvoISP.exe**.
 
@@ -28,7 +28,7 @@ Run **NuvoISP.exe**.
 
 ---
 
-# 2 Main Window Overview
+# Main Window Overview
 
 The main window is divided into the following areas:
 
@@ -50,9 +50,9 @@ The **menu bar** contains:
 
 ---
 
-# 3 Connecting to a Target Device
+# Connecting to a Target Device
 
-## 3.1 Selecting the Communication Interface
+## Selecting the Communication Interface
 
 Use the **Interface** dropdown at the top of the window. The available options are:
 
@@ -90,7 +90,7 @@ Use the **Interface** dropdown at the top of the window. The available options a
 
 *Figure 3‑3 Connection via Wi-Fi Interface*
 
-## 3.2 Configuring Interface Options
+## Configuring Interface Options
 
 Depending on the selected interface, additional controls appear:
 
@@ -105,7 +105,7 @@ Since version 3.00, SPI, I²C, RS485, CAN, and LIN interfaces are supported via 
 
 *Figure 3‑4 Connection Interface via Nu-Link2-Pro ISP-Bridge functionality*
 
-## 3.3 Establishing a Connection
+## Establishing a Connection
 
 1. Select the desired interface and configure any options.
 2. Prepare the target device:
@@ -122,7 +122,7 @@ On success, the status changes to **"Connected"** (green) and chip information i
 
 To disconnect, click the button again.
 
-## 3.4 Viewing Chip Information
+## Viewing Chip Information
 
 Once connected, the following information is displayed:
 
@@ -135,9 +135,9 @@ Once connected, the following information is displayed:
 
 ---
 
-# 4 Loading Firmware Files
+# Loading Firmware Files
 
-## 4.1 Loading an APROM File
+## Loading an APROM File
 
 1. Click the **APROM** button (labeled "Code" for some chip types).
 2. Browse and select a binary file (`.bin`).
@@ -147,7 +147,7 @@ Once connected, the following information is displayed:
 
 *Figure 4‑1 Click Button to Load Image file*
 
-## 4.2 Loading a Data Flash File
+## Loading a Data Flash File
 
 1. Click the **Data Flash** button (labeled "APROM_NS" on secure chips like M2351, or "Data" on some series).
 2. Browse and select a binary file.
@@ -155,14 +155,14 @@ Once connected, the following information is displayed:
 
 > **Note:** This button is hidden for chips that do not have a separate Data Flash region.
 
-## 4.3 Loading a SPI Flash File
+## Loading a SPI Flash File
 
 1. Click the **SPI Flash** button.
 2. Browse and select a binary file (max 2 MB).
 
 > **Note:** This button is only visible for chips with external SPI Flash support (e.g., M487KMCAN).
 
-## 4.4 Drag-and-Drop Support
+## Drag-and-Drop Support
 
 You can also drag and drop a binary file from Windows Explorer onto the APROM or Data Flash button area to load it.
 
@@ -172,7 +172,7 @@ You can also drag and drop a binary file from Windows Explorer onto the APROM or
 
 ---
 
-# 5 Viewing Hex Data
+# Viewing Hex Data
 
 The **Hex Data Viewer** section displays loaded binary data in a tabbed view. Tabs are shown for each loaded region (APROM, Data Flash, SPI Flash).
 
@@ -188,7 +188,7 @@ Click **Save As** to export the currently viewed data to a `.bin` file.
 
 ---
 
-# 6 Configuring Chip Settings
+# Configuring Chip Settings
 
 Click the **CONFIG** button to open the chip-specific settings dialog. The dialog layout depends on the connected chip series and provides graphical controls for:
 
@@ -207,9 +207,9 @@ After modifying settings, close the dialog. The updated CONFIG values appear in 
 
 ---
 
-# 7 Programming the Device
+# Programming the Device
 
-## 7.1 Setting Programming Options
+## Setting Programming Options
 
 Before starting, select the desired operations using the checkboxes:
 
@@ -225,7 +225,7 @@ Before starting, select the desired operations using the checkboxes:
 
 At least one option must be selected before programming can begin.
 
-## 7.2 Starting the Programming Process
+## Starting the Programming Process
 
 1. Ensure the device is connected.
 2. Load the required file(s).
@@ -234,7 +234,7 @@ At least one option must be selected before programming can begin.
 
 The tool validates that loaded files do not exceed the chip's flash size. If validation fails, an error is reported.
 
-## 7.3 Understanding the Programming Sequence
+## Understanding the Programming Sequence
 
 The programming process executes in this order:
 
@@ -248,7 +248,7 @@ The programming process executes in this order:
 
 The progress bar and status text update throughout: "Erase XX%" during erase, "Program XX%" during programming.
 
-## 7.4 Error Handling
+## Error Handling
 
 If an error occurs during programming, the status area displays an error message:
 
@@ -267,7 +267,7 @@ On success, the status shows: **"Programming flash, OK!"** (or **"Programming fl
 
 ---
 
-# 8 Exporting Offline ISP Settings
+# Exporting Offline ISP Settings
 
 The **Export** menu item (enabled only when connected) generates an offline ISP configuration file (`.isp`) that can be used with a standalone programmer.
 
@@ -306,17 +306,17 @@ For more details on the offline ISP workflow and LED status indicators, refer to
 
 ---
 
-# 9 Command-Line Mode
+# Command-Line Mode
 
 The tool supports headless operation for automated or batch programming workflows. When launched with command-line arguments, it runs without a GUI and outputs progress to the console.
 
-## 9.1 Syntax
+## Syntax
 
 ```
 NuvoISP.exe -interface <type> [port] -aprom <file> [-nvm <file>] [-spi <file>] [-erase] [-run] [-batch]
 ```
 
-## 9.2 Parameters
+## Parameters
 
 | Parameter | Description |
 |-----------|-------------|
@@ -329,7 +329,7 @@ NuvoISP.exe -interface <type> [port] -aprom <file> [-nvm <file>] [-spi <file>] [
 | `-run` | Reset and run APROM after programming. |
 | `-batch` | Continuously repeat the programming cycle (for production use). Implies `-run`. |
 
-## 9.3 Examples
+## Examples
 
 Program APROM via USB:
 ```
@@ -368,7 +368,7 @@ In batch mode, the ISPTool repeats the programming operation until the console w
 
 ---
 
-# 10 Troubleshooting
+# Troubleshooting
 
 | Symptom | Possible Cause | Solution |
 |---------|----------------|----------|

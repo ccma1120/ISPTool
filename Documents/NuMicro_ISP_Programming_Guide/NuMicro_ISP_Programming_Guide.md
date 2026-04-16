@@ -1,4 +1,4 @@
-# 1 Protocol Overview
+# Protocol Overview
 
 The ISP protocol uses fixed-size 64-byte packets for all communication between the host (PC) and the target device. Every command sent by the host receives either an ACK packet or no response (for reset commands). The protocol includes checksum validation and sequential packet numbering to ensure data integrity.
 
@@ -6,7 +6,7 @@ The ISP protocol uses fixed-size 64-byte packets for all communication between t
 
 *Figure 1.1 ISP system architecture — USB and UART direct connection*
 
-## 1.1 Packet Structure
+## Packet Structure
 
 ### Host → Device (Command Packet)
 
@@ -29,7 +29,7 @@ All fields are little-endian unsigned integers.
 
 > **Note:** For USB HID, an extra report ID byte (0x00) is prepended to all packets, making them 65 bytes on the wire. The byte offsets above refer to the logical payload starting after the report ID.
 
-## 1.2 Checksum
+## Checksum
 
 The checksum is a simple 16-bit sum of all 64 bytes of the command packet:
 
@@ -46,7 +46,7 @@ The host computes the checksum after building the command packet and stores it l
 
 The CAN interface does not use checksum validation.
 
-## 1.3 Packet Sequencing
+## Packet Sequencing
 
 Each command/ACK exchange uses a packet index to detect duplicates and ordering errors.
 
@@ -67,9 +67,9 @@ Each command/ACK exchange uses a packet index to detect duplicates and ordering 
 
 ---
 
-# 2 Communication Interfaces
+# Communication Interfaces
 
-## 2.1 USB HID
+## USB HID
 
 | Property | Value |
 |----------|-------|
@@ -78,7 +78,7 @@ Each command/ACK exchange uses a packet index to detect duplicates and ordering 
 | Packet size | 65 bytes (1-byte report ID + 64-byte payload) |
 
 
-## 2.2 UART
+## UART
 
 | Property | Value |
 |----------|-------|
@@ -89,7 +89,7 @@ Each command/ACK exchange uses a packet index to detect duplicates and ordering 
 | Packet size | 64 bytes |
 
 
-## 2.3 SPI / I²C / RS485 / LIN (Bridge)
+## SPI / I²C / RS485 / LIN (Bridge)
 
 These interfaces use a Nu-Link2-Pro or Nu-Link3-Pro adapter in ISP-Bridge mode as a USB HID bridge.
 
@@ -125,7 +125,7 @@ The bridge relays the 64-byte ISP payload to/from the target over the selected p
 
 *RS485 connection via ISP-Bridge (requires a tri-state transceiver on the target device)*
 
-## 2.4 CAN
+## CAN
 
 CAN uses a fundamentally different packet format from all other interfaces. See [Section 4](#4-can-command-set).
 
@@ -140,7 +140,7 @@ CAN uses a fundamentally different packet format from all other interfaces. See 
 
 *CAN connection via ISP-Bridge*
 
-## 2.5 Wi-Fi / BLE
+## Wi-Fi / BLE
 
 | Property | Wi-Fi | BLE |
 |----------|-------|-----|
@@ -154,7 +154,7 @@ CAN uses a fundamentally different packet format from all other interfaces. See 
 
 ---
 
-# 3 ISP Command Set
+# ISP Command Set
 
 All command codes are 32-bit little-endian values. Timeouts noted below are the host-side defaults.
 
@@ -162,7 +162,7 @@ All command codes are 32-bit little-endian values. Timeouts noted below are the 
 - Standard: 5,000 ms
 - Long (erase/program): 25,000 ms
 
-## 3.1 CMD_CONNECT (0xAE)
+## CMD_CONNECT (0xAE)
 
 Handshake command to detect whether ISP is running.
 
@@ -187,7 +187,7 @@ Handshake command to detect whether ISP is running.
 
 *Device-side flow — ISP resets `g_packno` to 1 and returns an ACK.*
 
-## 3.2 CMD_SYNC_PACKNO (0xA4)
+## CMD_SYNC_PACKNO (0xA4)
 
 Resets the packet sequence counter. Must be called before any other command.
 
@@ -210,7 +210,7 @@ Resets the packet sequence counter. Must be called before any other command.
 
 *Device-side flow*
 
-## 3.3 CMD_GET_VERSION (0xA6)
+## CMD_GET_VERSION (0xA6)
 
 Returns the ISP firmware version.
 
@@ -230,7 +230,7 @@ Returns the ISP firmware version.
 
 *Device-side flow*
 
-## 3.4 CMD_GET_DEVICEID (0xB1)
+## CMD_GET_DEVICEID (0xB1)
 
 Returns the chip's device identification register.
 
@@ -252,7 +252,7 @@ The host uses the device ID to determine APROM size and resolve the part number 
 
 *Device-side flow*
 
-## 3.5 CMD_READ_CONFIG (0xA2)
+## CMD_READ_CONFIG (0xA2)
 
 Reads 14 CONFIG register DWORDs from the device.
 
@@ -277,7 +277,7 @@ Total: 56 bytes (14 × 4-byte).
 
 *Device-side flow*
 
-## 3.6 CMD_READ_CONFIG_EXT (0xE0)
+## CMD_READ_CONFIG_EXT (0xE0)
 
 Reads a single CONFIG register by index. Used for chips with extended configuration (M3331, CM3031 series — 19 CONFIG words).
 
@@ -293,7 +293,7 @@ Reads a single CONFIG register by index. Used for chips with extended configurat
 |:-----------:|:----:|-------|
 | 8–11 | 4 | CONFIG[index] |
 
-## 3.7 CMD_UPDATE_CONFIG (0xA1)
+## CMD_UPDATE_CONFIG (0xA1)
 
 Writes 14 CONFIG register DWORDs to the device. Timeout: 25,000 ms.
 
@@ -318,7 +318,7 @@ When ISP receives the command, it erases the CONFIG area, programs the new value
 
 *Device-side flow*
 
-## 3.8 CMD_UPDATE_CONFIG_EXT (0xE1)
+## CMD_UPDATE_CONFIG_EXT (0xE1)
 
 Writes CONFIG registers in 2-DWORD pairs by index. Used for M3331/CM3031 series. Timeout: 25,000 ms.
 
@@ -337,7 +337,7 @@ Writes CONFIG registers in 2-DWORD pairs by index. Used for M3331/CM3031 series.
 | 8–11 | 4 | CONFIG[index] (read back) |
 | 12–15 | 4 | CONFIG[index + 1] (read back) |
 
-## 3.9 CMD_ERASE_ALL (0xA3)
+## CMD_ERASE_ALL (0xA3)
 
 Erases APROM, Data Flash, and CONFIG area. CONFIG registers are restored to defaults (`0xFFFFFF7F`, `0x0001F000`). Timeout: 25,000 ms.
 
@@ -353,7 +353,7 @@ Erases APROM, Data Flash, and CONFIG area. CONFIG registers are restored to defa
 
 *Device-side flow*
 
-## 3.10 CMD_UPDATE_APROM (0xA0)
+## CMD_UPDATE_APROM (0xA0)
 
 Programs APROM flash in multi-packet chunks. Timeout: 25,000 ms.
 
@@ -387,7 +387,7 @@ When ISP receives the first command packet, it erases the target APROM region (e
 
 *Device-side flow*
 
-## 3.11 CMD_UPDATE_DATAFLASH (0xC3)
+## CMD_UPDATE_DATAFLASH (0xC3)
 
 Programs Data Flash (NVM). The packet format is identical to `CMD_UPDATE_APROM`.
 
@@ -401,7 +401,7 @@ Programs Data Flash (NVM). The packet format is identical to `CMD_UPDATE_APROM`.
 
 *Device-side flow*
 
-## 3.12 CMD_ERASE_SPIFLASH (0xD0)
+## CMD_ERASE_SPIFLASH (0xD0)
 
 Erases SPI flash in 64 KB blocks. One command per block. Timeout: 25,000 ms per block.
 
@@ -413,7 +413,7 @@ Erases SPI flash in 64 KB blocks. One command per block. Timeout: 25,000 ms per 
 
 The host loops from `offset = 0` to `total_length`, incrementing by 64 KB each iteration.
 
-## 3.13 CMD_UPDATE_SPIFLASH (0xD1)
+## CMD_UPDATE_SPIFLASH (0xD1)
 
 Programs SPI Flash in chunks. Timeout: 25,000 ms per chunk.
 
@@ -427,7 +427,7 @@ Programs SPI Flash in chunks. Timeout: 25,000 ms per chunk.
 
 The host loops, sending up to 48 bytes per packet until all data is transmitted.
 
-## 3.14 CMD_RUN_APROM (0xAB)
+## CMD_RUN_APROM (0xAB)
 
 Instructs the device to reset and boot from APROM.
 
@@ -445,7 +445,7 @@ Instructs the device to reset and boot from APROM.
 
 *Device-side flow*
 
-## 3.15 CMD_RUN_LDROM (0xAC)
+## CMD_RUN_LDROM (0xAC)
 
 Instructs the device to reset and boot from LDROM.
 
@@ -463,7 +463,7 @@ Instructs the device to reset and boot from LDROM.
 
 *Device-side flow*
 
-## 3.16 CMD_RESET (0xAD)
+## CMD_RESET (0xAD)
 
 Instructs the device to perform a hardware reset.
 
@@ -481,7 +481,7 @@ Instructs the device to perform a hardware reset.
 
 *Device-side flow*
 
-## 3.17 CMD_WRITE_CHECKSUM (0xC9)
+## CMD_WRITE_CHECKSUM (0xC9)
 
 Writes the application program length and checksum into the last 8 bytes of APROM. Issued after APROM update is complete.
 
@@ -504,7 +504,7 @@ Writes the application program length and checksum into the last 8 bytes of APRO
 
 *Device-side flow*
 
-## 3.18 CMD_GET_FLASHMODE (0xCA)
+## CMD_GET_FLASHMODE (0xCA)
 
 Retrieves the boot selection (BS) bit to determine whether the device is running from APROM or LDROM.
 
@@ -526,7 +526,7 @@ Retrieves the boot selection (BS) bit to determine whether the device is running
 
 *Device-side flow*
 
-## 3.19 CMD_RESEND_PACKET (0xFF)
+## CMD_RESEND_PACKET (0xFF)
 
 Requests the device to re-transmit its last ACK. Used for error recovery.
 
@@ -544,11 +544,11 @@ Requests the device to re-transmit its last ACK. Used for error recovery.
 
 ---
 
-# 4 CAN Command Set
+# CAN Command Set
 
 The CAN interface uses a different packet format and a reduced command set due to device-side code size constraints.
 
-## 4.1 CAN Packet Structure
+## CAN Packet Structure
 
 ### Host → Device (CAN Command)
 
@@ -570,7 +570,7 @@ The CAN interface uses a different packet format and a reduced command set due t
 
 **Validation:** The host verifies that bytes 1–4 match the sent command code. No checksum is used.
 
-## 4.2 CAN Commands
+## CAN Commands
 
 | Command | Code | Data Parameter | Response Data |
 |---------|:----:|----------------|---------------|
@@ -587,7 +587,7 @@ Address = 0x00300000 + (index × 4)
 
 For chips with special CONFIG base (M460, M2L31, M55M1), the base address is `0x0F300000`.
 
-## 4.3 CAN APROM Programming Flow
+## CAN APROM Programming Flow
 
 CAN programs APROM in 8-byte (two 4-byte DWORD) steps:
 
@@ -601,7 +601,7 @@ FOR each 8-byte block at cur_addr:
 
 ---
 
-# 5 Programming Workflow
+# Programming Workflow
 
 ### ISP Booting Flow
 
@@ -622,7 +622,7 @@ Once ISP mode is entered, the ISP program enters a command parsing loop, process
 
 *ISP Main Flow (USB/UART)*
 
-## 5.1 Connection Sequence
+## Connection Sequence
 
 ```
 1. Open_Port()          — Open USB HID, COM port, or bridge device
@@ -636,7 +636,7 @@ Once ISP mode is entered, the ISP program enters a command parsing loop, process
 
 For M3331/CM3031 chips (device ID mask `0xFFFFF000` equals `0x03300000` or `0x06300000`), use `ReadConfig_Ext()` in a loop for indices 0–18 instead of `ReadConfig()`.
 
-## 5.2 Device Identification
+## Device Identification
 
 After reading the device ID, the host resolves:
 
@@ -651,7 +651,7 @@ The flash layout depends on the CONFIG0 register's DFEN (Data Flash Enable) bit:
 - **DFEN = 0 (enabled):** Data Flash is carved from the end of program memory. CONFIG1 bits [23:0] define the Data Flash start address (page-aligned). APROM size = Data Flash address − APROM base. NVM size = total program memory − APROM size.
 - **DFEN = 1 (disabled):** APROM uses the entire program memory. NVM size = 0.
 
-## 5.3 Programming Sequence
+## Programming Sequence
 
 The ISP Tool executes these phases in order:
 
@@ -690,7 +690,7 @@ The following diagram shows the overall APROM update command flow:
 
 *Complete command sequence for updating APROM*
 
-## 5.4 Retry and Error Recovery
+## Retry and Error Recovery
 
 During APROM and Data Flash programming, each chunk allows up to 10 retries:
 
@@ -712,7 +712,7 @@ The `bResendFlag` is set by `ReadFile()` when validation fails, and cleared on t
 
 ---
 
-# 6 Flash Layout and Size Resolution
+# Flash Layout and Size Resolution
 
 The host uses two database structures to resolve device capabilities:
 
@@ -761,9 +761,9 @@ struct CPartNumID {
 
 ---
 
-# 7 API Reference
+# API Reference
 
-## 7.1 ISPLdCMD Class
+## ISPLdCMD Class
 
 The low-level ISP protocol implementation.
 
@@ -807,7 +807,7 @@ bool Check_USB_Link();
 | `m_bSupport_SPI` | `BOOL` | Device supports SPI Flash commands. |
 | `m_bSpecConfigAddr` | `BOOL` | Device uses alternate CONFIG base `0x0F300000`. |
 
-## 7.2 CISPProc Class
+## CISPProc Class
 
 The high-level programming state machine.
 
@@ -847,7 +847,7 @@ The high-level programming state machine.
 | `m_CONFIG[19]` | `unsigned int[]` | Current device CONFIG values. |
 | `m_CONFIG_User[19]` | `unsigned int[]` | User-modified CONFIG values. |
 
-## 7.3 Error Codes
+## Error Codes
 
 | Code | Name | Description |
 |:----:|------|-------------|
