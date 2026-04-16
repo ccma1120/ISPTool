@@ -46,7 +46,6 @@ The **menu bar** contains:
 
 ![Main Dialog](./media/image6.png)
 
-*Figure 2‑1 Main Dialog*
 
 ---
 
@@ -80,15 +79,12 @@ Use the **Interface** dropdown at the top of the window. The available options a
 
 ![Connection via USB Interface](./media/image2.png)
 
-*Figure 3‑1 Connection via USB Interface*
 
 ![Connection via UART Interface](./media/image3.png)
 
-*Figure 3‑2 Connection via UART Interface using specific COM port*
 
 ![Connection via Wi-Fi Interface](./media/image4.png)
 
-*Figure 3‑3 Connection via Wi-Fi Interface*
 
 ### Configuring Interface Options
 
@@ -99,11 +95,10 @@ Depending on the selected interface, additional controls appear:
 - **BLE:** A device name field appears showing the connected BLE device.
 - **All others:** No additional configuration is needed.
 
-Since version 3.00, SPI, I²C, RS485, CAN, and LIN interfaces are supported via a Nu-Link2-Pro adapter in ISP-Bridge mode. For interface connection details, refer to Chapter 3 of the [Nu-Link2-Pro Debugger and Programmer User Manual](https://www.nuvoton.com/resource-download.jsp?tp_GUID=UG1320200319174043).
+SPI, I²C, RS485, CAN, and LIN interfaces are supported via a Nu-Link2-Pro adapter in ISP-Bridge mode. For interface connection details, refer to 'Hardware Connection' Chapter of the [Nu-Link2 and Nu-Link3 User Manual](https://github.com/OpenNuvoton/Nuvoton_Tools/tree/master/Documents/Nu-Link2_Nu-Link3_User_Manual).
 
 ![Connection Interface via Nu-Link2-Pro ISP-Bridge](./media/image5.png)
 
-*Figure 3‑4 Connection Interface via Nu-Link2-Pro ISP-Bridge functionality*
 
 ### Establishing a Connection
 
@@ -145,11 +140,10 @@ Once connected, the following information is displayed:
 
 ![Click Button to Load Image file](./media/image7.png)
 
-*Figure 4‑1 Click Button to Load Image file*
 
 ### Loading a Data Flash File
 
-1. Click the **Data Flash** button (labeled "APROM_NS" on secure chips like M2351, or "Data" on some series).
+1. Click the **Data Flash** button.
 2. Browse and select a binary file.
 3. The file path, size, and checksum are displayed.
 
@@ -168,7 +162,6 @@ You can also drag and drop a binary file from Windows Explorer onto the APROM or
 
 ![Drag image file from explorer window](./media/image8.png)
 
-*Figure 4‑2 Drag image file from explorer window*
 
 ---
 
@@ -203,6 +196,8 @@ Click the **CONFIG** button to open the chip-specific settings dialog. The dialo
 
 > **Note:** The ISP tool does not allow modifying the Boot Select setting. To change it, use the Nuvoton NuMicro® ICP Programming Tool.
 
+> **Note:** When the Security Lock bit (CBS bit in CONFIG[0]) is set to 0, the ISP tool can still connect to the chip, but the only permitted operation is **Erase All** — which erases all flash memory including the lock bit itself. There is no way to remove the security lock without erasing the entire chip.
+
 After modifying settings, close the dialog. The updated CONFIG values appear in the main window, color-coded red if they differ from the values currently on the chip.
 
 ---
@@ -217,7 +212,7 @@ Before starting, select the desired operations using the checkboxes:
 |----------|-------------|
 | **APROM** | Program the loaded APROM binary to flash. Requires a file to be loaded. |
 | **Data Flash** | Program the loaded Data Flash binary. Requires a file to be loaded. |
-| **CONFIG** | Write the CONFIG register values set in the CONFIG dialog. Security lock enables write protection; programming APROM or using Erase All removes it. Changes take effect after system reboot. |
+| **CONFIG** | Write the CONFIG register values set in the CONFIG dialog. When Security Lock is enabled (CBS bit in CONFIG[0] = 0), the only ISP operation permitted on the chip is Erase All, which also removes the lock. |
 | **SPI Flash** | Program the loaded SPI Flash binary. Visible only for supported chips. |
 | **Erase All** | Erase the entire chip (APROM, Data Flash, CONFIG) before programming. |
 | **Erase SPI Flash** | Erase only the SPI Flash. Visible only for supported chips. |
@@ -284,7 +279,6 @@ On success, a confirmation dialog appears: **"Settings saved successfully"**.
 
 ![Export settings for offline ISP](./media/export_isp_file.png)
 
-*Figure 8‑1 Export settings for offline ISP*
 
 ## Offline Programming Workflow
 
@@ -343,7 +337,6 @@ NuvoISP.exe -interface UART COM3 -aprom firmware.bin -nvm data.bin -erase -run
 
 ![Programming result](./media/image10.png)
 
-*Figure 9‑1 Programming result*
 
 Batch programming (repeats until manually stopped):
 ```
@@ -364,7 +357,6 @@ In batch mode, the ISPTool repeats the programming operation until the console w
 
 ![Batch programming result](./media/image11.png)
 
-*Figure 9‑2 Batch programming result*
 
 ---
 

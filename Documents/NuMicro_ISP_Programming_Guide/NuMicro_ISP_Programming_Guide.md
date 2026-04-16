@@ -4,7 +4,6 @@ The ISP protocol uses fixed-size 64-byte packets for all communication between t
 
 ![Figure 1.1 ISP Through USB and UART](./media/image1.png)
 
-*Figure 1.1 ISP system architecture — USB and UART direct connection*
 
 ## Packet Structure
 
@@ -115,15 +114,12 @@ The bridge relays the 64-byte ISP payload to/from the target over the selected p
 
 ![Figure 2.3a SPI Connect Block Diagram](./media/image7.png)
 
-*SPI connection via ISP-Bridge*
 
 ![Figure 2.3b I²C Connection Block Diagram](./media/image10.png)
 
-*I²C connection via ISP-Bridge*
 
 ![Figure 2.3c RS485 Connection Block Diagram](./media/image13.png)
 
-*RS485 connection via ISP-Bridge (requires a tri-state transceiver on the target device)*
 
 ## CAN
 
@@ -138,7 +134,6 @@ CAN uses a fundamentally different packet format from all other interfaces. See 
 
 ![Figure 2.4 CAN Connection Block Diagram](./media/image15.png)
 
-*CAN connection via ISP-Bridge*
 
 ## Wi-Fi / BLE
 
@@ -181,11 +176,9 @@ Handshake command to detect whether ISP is running.
 
 ![Connect Command: Host Side](./media/image45.png)
 
-*Host-side flow*
 
 ![Connect Command: Device Side](./media/image46.png)
 
-*Device-side flow — ISP resets `g_packno` to 1 and returns an ACK.*
 
 ## CMD_SYNC_PACKNO (0xA4)
 
@@ -204,11 +197,9 @@ Resets the packet sequence counter. Must be called before any other command.
 
 ![Sync Packet Number Command: Host Side](./media/image25.png)
 
-*Host-side flow*
 
 ![Sync Packet Number Command: Device Side](./media/image26.png)
 
-*Device-side flow*
 
 ## CMD_GET_VERSION (0xA6)
 
@@ -224,11 +215,9 @@ Returns the ISP firmware version.
 
 ![Get ISP Version Command: Host Side](./media/image27.png)
 
-*Host-side flow*
 
 ![Get ISP Version Command: Device Side](./media/image28.png)
 
-*Device-side flow*
 
 ## CMD_GET_DEVICEID (0xB1)
 
@@ -246,11 +235,9 @@ The host uses the device ID to determine APROM size and resolve the part number 
 
 ![Get Product ID Command: Host Side](./media/image29.png)
 
-*Host-side flow*
 
 ![Get Product ID Command: Device Side](./media/image30.png)
 
-*Device-side flow*
 
 ## CMD_READ_CONFIG (0xA2)
 
@@ -271,11 +258,9 @@ Total: 56 bytes (14 × 4-byte).
 
 ![Read Config Command: Host Side](./media/image21.png)
 
-*Host-side flow*
 
 ![Read Config Command: Device Side](./media/image22.png)
 
-*Device-side flow*
 
 ## CMD_READ_CONFIG_EXT (0xE0)
 
@@ -312,11 +297,9 @@ When ISP receives the command, it erases the CONFIG area, programs the new value
 
 ![Update Config Command: Host Side](./media/image19.png)
 
-*Host-side flow*
 
 ![Update Config Command: Device Side](./media/image20.png)
 
-*Device-side flow*
 
 ## CMD_UPDATE_CONFIG_EXT (0xE1)
 
@@ -347,11 +330,9 @@ Erases APROM, Data Flash, and CONFIG area. CONFIG registers are restored to defa
 
 ![Erase Flash Memory Command: Host Side](./media/image23.png)
 
-*Host-side flow*
 
 ![Erase Flash Memory Command: Device Side](./media/image24.png)
 
-*Device-side flow*
 
 ## CMD_UPDATE_APROM (0xA0)
 
@@ -381,11 +362,9 @@ When ISP receives the first command packet, it erases the target APROM region (e
 
 ![Program APROM Command: Host Side](./media/image17.png)
 
-*Host-side flow*
 
 ![Program APROM Command: Device Side](./media/image18.png)
 
-*Device-side flow*
 
 ## CMD_UPDATE_DATAFLASH (0xC3)
 
@@ -395,11 +374,9 @@ Programs Data Flash (NVM). The packet format is identical to `CMD_UPDATE_APROM`.
 
 ![Program Data Flash Command: Host Side](./media/image31.png)
 
-*Host-side flow*
 
 ![Program Data Flash Command: Device Side](./media/image32.png)
 
-*Device-side flow*
 
 ## CMD_ERASE_SPIFLASH (0xD0)
 
@@ -439,11 +416,9 @@ Instructs the device to reset and boot from APROM.
 
 ![Run APROM Command: Host Side](./media/image33.png)
 
-*Host-side flow*
 
 ![Run APROM Command: Device Side](./media/image34.png)
 
-*Device-side flow*
 
 ## CMD_RUN_LDROM (0xAC)
 
@@ -457,11 +432,9 @@ Instructs the device to reset and boot from LDROM.
 
 ![Run LDROM Command: Host Side](./media/image35.png)
 
-*Host-side flow*
 
 ![Run LDROM Command: Device Side](./media/image36.png)
 
-*Device-side flow*
 
 ## CMD_RESET (0xAD)
 
@@ -475,11 +448,9 @@ Instructs the device to perform a hardware reset.
 
 ![Reset Command: Host Side](./media/image37.png)
 
-*Host-side flow*
 
 ![Reset Command: Device Side](./media/image38.png)
 
-*Device-side flow*
 
 ## CMD_WRITE_CHECKSUM (0xC9)
 
@@ -498,11 +469,9 @@ Writes the application program length and checksum into the last 8 bytes of APRO
 
 ![Write Checksum Command: Host Side](./media/image39.png)
 
-*Host-side flow*
 
 ![Write Checksum Command: Device Side](./media/image40.png)
 
-*Device-side flow*
 
 ## CMD_GET_FLASHMODE (0xCA)
 
@@ -520,11 +489,9 @@ Retrieves the boot selection (BS) bit to determine whether the device is running
 
 ![Get Flash Mode Command: Host Side](./media/image41.png)
 
-*Host-side flow*
 
 ![Get Flash Mode Command: Device Side](./media/image42.png)
 
-*Device-side flow*
 
 ## CMD_RESEND_PACKET (0xFF)
 
@@ -536,11 +503,9 @@ Requests the device to re-transmit its last ACK. Used for error recovery.
 
 ![Resend Packet Command: Host Side](./media/image43.png)
 
-*Host-side flow*
 
 ![Resend Packet Command: Device Side](./media/image44.png)
 
-*Device-side flow*
 
 ---
 
@@ -612,7 +577,6 @@ At boot phase, NuMicro® MCU fetches code from either LDROM or APROM, controlled
 
 ![USB/UART ISP Booting Flow](./media/image5.png)
 
-*ISP Booting Flow (USB/UART)*
 
 ### ISP Main Flow
 
@@ -620,7 +584,6 @@ Once ISP mode is entered, the ISP program enters a command parsing loop, process
 
 ![USB/UART ISP Main Flow](./media/image6.png)
 
-*ISP Main Flow (USB/UART)*
 
 ## Connection Sequence
 
@@ -688,7 +651,6 @@ The following diagram shows the overall APROM update command flow:
 
 ![Update APROM Command Flow](./media/image47.png)
 
-*Complete command sequence for updating APROM*
 
 ## Retry and Error Recovery
 
