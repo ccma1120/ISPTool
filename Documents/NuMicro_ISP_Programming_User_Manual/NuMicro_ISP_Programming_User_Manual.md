@@ -50,9 +50,9 @@ The **menu bar** contains:
 
 ---
 
-# Connecting to a Target Device
+## Connecting to a Target Device
 
-## Selecting the Communication Interface
+### Selecting the Communication Interface
 
 Use the **Interface** dropdown at the top of the window. The available options are:
 
@@ -90,7 +90,7 @@ Use the **Interface** dropdown at the top of the window. The available options a
 
 *Figure 3‑3 Connection via Wi-Fi Interface*
 
-## Configuring Interface Options
+### Configuring Interface Options
 
 Depending on the selected interface, additional controls appear:
 
@@ -105,7 +105,7 @@ Since version 3.00, SPI, I²C, RS485, CAN, and LIN interfaces are supported via 
 
 *Figure 3‑4 Connection Interface via Nu-Link2-Pro ISP-Bridge functionality*
 
-## Establishing a Connection
+### Establishing a Connection
 
 1. Select the desired interface and configure any options.
 2. Prepare the target device:
@@ -122,7 +122,7 @@ On success, the status changes to **"Connected"** (green) and chip information i
 
 To disconnect, click the button again.
 
-## Viewing Chip Information
+### Viewing Chip Information
 
 Once connected, the following information is displayed:
 
@@ -135,9 +135,9 @@ Once connected, the following information is displayed:
 
 ---
 
-# Loading Firmware Files
+## Loading Firmware Files
 
-## Loading an APROM File
+### Loading an APROM File
 
 1. Click the **APROM** button (labeled "Code" for some chip types).
 2. Browse and select a binary file (`.bin`).
@@ -147,7 +147,7 @@ Once connected, the following information is displayed:
 
 *Figure 4‑1 Click Button to Load Image file*
 
-## Loading a Data Flash File
+### Loading a Data Flash File
 
 1. Click the **Data Flash** button (labeled "APROM_NS" on secure chips like M2351, or "Data" on some series).
 2. Browse and select a binary file.
@@ -155,14 +155,14 @@ Once connected, the following information is displayed:
 
 > **Note:** This button is hidden for chips that do not have a separate Data Flash region.
 
-## Loading a SPI Flash File
+### Loading a SPI Flash File
 
 1. Click the **SPI Flash** button.
 2. Browse and select a binary file (max 2 MB).
 
 > **Note:** This button is only visible for chips with external SPI Flash support (e.g., M487KMCAN).
 
-## Drag-and-Drop Support
+### Drag-and-Drop Support
 
 You can also drag and drop a binary file from Windows Explorer onto the APROM or Data Flash button area to load it.
 
@@ -172,7 +172,7 @@ You can also drag and drop a binary file from Windows Explorer onto the APROM or
 
 ---
 
-# Viewing Hex Data
+## Viewing Hex Data
 
 The **Hex Data Viewer** section displays loaded binary data in a tabbed view. Tabs are shown for each loaded region (APROM, Data Flash, SPI Flash).
 
@@ -188,7 +188,7 @@ Click **Save As** to export the currently viewed data to a `.bin` file.
 
 ---
 
-# Configuring Chip Settings
+## Configuring Chip Settings
 
 Click the **CONFIG** button to open the chip-specific settings dialog. The dialog layout depends on the connected chip series and provides graphical controls for:
 
@@ -207,9 +207,9 @@ After modifying settings, close the dialog. The updated CONFIG values appear in 
 
 ---
 
-# Programming the Device
+## Programming the Device
 
-## Setting Programming Options
+### Setting Programming Options
 
 Before starting, select the desired operations using the checkboxes:
 
@@ -225,7 +225,7 @@ Before starting, select the desired operations using the checkboxes:
 
 At least one option must be selected before programming can begin.
 
-## Starting the Programming Process
+### Starting the Programming Process
 
 1. Ensure the device is connected.
 2. Load the required file(s).
@@ -234,7 +234,7 @@ At least one option must be selected before programming can begin.
 
 The tool validates that loaded files do not exceed the chip's flash size. If validation fails, an error is reported.
 
-## Understanding the Programming Sequence
+### Understanding the Programming Sequence
 
 The programming process executes in this order:
 
@@ -248,7 +248,7 @@ The programming process executes in this order:
 
 The progress bar and status text update throughout: "Erase XX%" during erase, "Program XX%" during programming.
 
-## Error Handling
+### Error Handling
 
 If an error occurs during programming, the status area displays an error message:
 
@@ -267,7 +267,7 @@ On success, the status shows: **"Programming flash, OK!"** (or **"Programming fl
 
 ---
 
-# Exporting Offline ISP Settings
+## Exporting Offline ISP Settings
 
 The **Export** menu item (enabled only when connected) generates an offline ISP configuration file (`.isp`) that can be used with a standalone programmer.
 
