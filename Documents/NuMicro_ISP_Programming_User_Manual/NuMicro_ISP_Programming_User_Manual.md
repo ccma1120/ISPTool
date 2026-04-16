@@ -286,7 +286,7 @@ On success, a confirmation dialog appears: **"Settings saved successfully"**.
 
 *Figure 8‑1 Export settings for offline ISP*
 
-### Offline Programming Workflow
+## Offline Programming Workflow
 
 After exporting the `.isp` file, follow these steps:
 

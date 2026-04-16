@@ -22,11 +22,13 @@ jobs:
           - doc_dir: NuMicro_ISP_Programming_Guide
             doc_file: NuMicro_ISP_Programming_Guide.md
             pdf_name: NuMicro_ISP_Programming_Guide
-            cover_title: "NuMicro ISP Protocol — Developer Programming Guide"
+            cover_line1: "NuMicro ISP Protocol —"
+            cover_line2: "Developer Programming Guide"
           - doc_dir: NuMicro_ISP_Programming_User_Manual
             doc_file: NuMicro_ISP_Programming_User_Manual.md
             pdf_name: NuMicro_ISP_Programming_User_Manual
-            cover_title: "NuMicro ISP Programming Tool — User Manual"
+            cover_line1: "NuMicro ISP Programming Tool —"
+            cover_line2: "User Manual"
 
     steps:
       - name: Checkout repository
@@ -64,7 +66,7 @@ jobs:
       - name: Prepare cover page
         run: |
           cd Documents
-          sed 's|@@DOCTITLE@@|${{ matrix.cover_title }}|' cover.tex > cover_${{ matrix.doc_dir }}.tex
+          sed -e 's|@@LINE1@@|${{ matrix.cover_line1 }}|' -e 's|@@LINE2@@|${{ matrix.cover_line2 }}|' cover.tex > cover_${{ matrix.doc_dir }}.tex
 
       - name: Convert with Pandoc
         run: |
