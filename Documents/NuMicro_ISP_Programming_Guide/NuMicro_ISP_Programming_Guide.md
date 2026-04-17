@@ -560,7 +560,7 @@ FOR each 8-byte block at cur_addr:
 
 # Programming Workflow
 
-### ISP Booting Flow
+## ISP Booting Flow
 
 At boot phase, NuMicro® MCU fetches code from either LDROM or APROM, controlled by the CONFIG0 register. The “boot from LDROM” option must be configured before running ISP programming. ISP enters ISP mode if:
 
@@ -570,14 +570,14 @@ At boot phase, NuMicro® MCU fetches code from either LDROM or APROM, controlled
 ![USB/UART ISP Booting Flow](./media/image5.png)
 
 
-### ISP Main Flow
+## ISP Main Flow
 
 Once ISP mode is entered, the ISP program enters a command parsing loop, processing commands from the active interface and executing the corresponding operations.
 
 ![USB/UART ISP Main Flow](./media/image6.png)
 
 
-## Connection Sequence
+### Connection Sequence
 
 ```
 1. Open_Port()          — Open USB HID, COM port, or bridge device
@@ -591,7 +591,7 @@ Once ISP mode is entered, the ISP program enters a command parsing loop, process
 
 For M3331/CM3031 chips (device ID mask `0xFFFFF000` equals `0x03300000` or `0x06300000`), use `ReadConfig_Ext()` in a loop for indices 0–18 instead of `ReadConfig()`.
 
-## Device Identification
+### Device Identification
 
 After reading the device ID, the host resolves:
 
@@ -599,14 +599,14 @@ After reading the device ID, the host resolves:
 2. **Flash layout** — APROM size, Data Flash address/size, and LDROM size are determined from the device ID and CONFIG register values.
 3. **Capabilities** — SPI Flash support, extended CONFIG support, and 64-bit programming mode are detected from the device ID and connect response.
 
-### Flash Size Resolution
 
+**Flash Size Resolution**  
 The flash layout depends on the CONFIG0 register's DFEN (Data Flash Enable) bit:
 
 - **DFEN = 0 (enabled):** Data Flash is carved from the end of program memory. CONFIG1 bits [23:0] define the Data Flash start address (page-aligned). APROM size = Data Flash address − APROM base. NVM size = total program memory − APROM size.
 - **DFEN = 1 (disabled):** APROM uses the entire program memory. NVM size = 0.
 
-## Programming Sequence
+### Programming Sequence
 
 The ISP Tool executes these phases in order:
 
@@ -670,7 +670,7 @@ The `bResendFlag` is set by `ReadFile()` when validation fails, and cleared on t
 
 The host uses two database structures to resolve device capabilities:
 
-### By Device ID (DID)
+## By Device ID (DID)
 
 ```c
 struct FLASH_INFO_BY_DID_T {
@@ -689,7 +689,7 @@ struct FLASH_INFO_BY_DID_T {
 };
 ```
 
-### By Product ID (PID)
+## By Product ID (PID)
 
 ```c
 struct FLASH_PID_INFO_BASE_T {
@@ -703,7 +703,7 @@ struct FLASH_PID_INFO_BASE_T {
 };
 ```
 
-### Part Number Lookup
+## Part Number Lookup
 
 ```c
 struct CPartNumID {
