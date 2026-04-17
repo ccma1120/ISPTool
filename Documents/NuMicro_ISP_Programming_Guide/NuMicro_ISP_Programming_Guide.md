@@ -110,15 +110,6 @@ Interface constants:
 
 The bridge relays the 64-byte ISP payload to/from the target over the selected physical interface.
 
-### Connection Diagrams
-
-![Figure 2.3a SPI Connect Block Diagram](./media/image7.png)
-
-
-![Figure 2.3b I²C Connection Block Diagram](./media/image10.png)
-
-
-![Figure 2.3c RS485 Connection Block Diagram](./media/image13.png)
 
 
 ## CAN
@@ -132,8 +123,6 @@ CAN uses a fundamentally different packet format from all other interfaces. See 
 | Command set | Reduced (4 commands only) |
 | Checksum | Not used |
 
-![Figure 2.4 CAN Connection Block Diagram](./media/image15.png)
-
 
 ## Wi-Fi / BLE
 
@@ -146,6 +135,9 @@ CAN uses a fundamentally different packet format from all other interfaces. See 
 | Notify characteristic | — | `0xABF2` |
 | Packet size | 64 bytes | 64 bytes |
 
+
+
+For wiring details, refer to the **Hardware Connection** chapter of the [Nu-Link2 and Nu-Link3 User Manual](https://github.com/OpenNuvoton/Nuvoton_Tools/blob/master/Documents/Nu-Link2_Nu-Link3_User_Manual/Nu-Link2_Nu-Link3_User_Manual.md).
 
 ---
 

@@ -106,7 +106,7 @@ SPI, I²C, RS485, CAN, and LIN interfaces are supported via a Nu-Link2-Pro adapt
 2. Prepare the target device:
    - **USB:** Ensure the detect pin is held LOW.
    - **UART / SPI / I²C / RS485 / CAN / LIN:** Ensure the target is booted into LDROM.
-   - **SPI / I²C / RS485 / CAN / LIN:** Ensure Nu-Link2-Pro is connected and in ISP-Bridge mode.
+   - **SPI / I²C / RS485 / CAN / LIN:** Ensure Nu-Link3-Pro or Nu-Link2-Pro is connected and Nu-Link2-Pro should be in ISP-Bridge mode.
 3. Click **Connect**.
 
 The tool polls the target board every 40 ms (200 ms for LIN, Wi-Fi, and BLE) until a connection is established or the **Stop** button is clicked. If there is no response, reset the MCU to execute the ISP code.
@@ -192,7 +192,7 @@ Click the **CONFIG** button to open the chip-specific settings dialog. The dialo
 - Security lock options
 - ISP interface enable/disable
 
-> **Note:** The CONFIG button is disabled when no device is connected, or for chips that do not support user-configurable CONFIG registers (e.g., NUC505). It is also disabled for the CAN interface on certain chips.
+> **Note:** The CONFIG button is disabled when no device is connected, or for chips that do not support user-configurable CONFIG registers (e.g., NUC505). 
 
 > **Note:** The ISP tool does not allow modifying the Boot Select setting. To change it, use the Nuvoton NuMicro® ICP Programming Tool.
 
@@ -294,8 +294,6 @@ After exporting the `.isp` file, follow these steps:
 > - To update the offline data, overwrite the existing `.isp` file on the disk. The disk will remount once the update is complete.
 > - To clear the offline ISP data, create a blank file named `CLR_ISP.ACT` in the root directory of the Nu-Link disk.
 
-**Requirements:** ISPTool v4.17 or later; Nu-Link firmware version 7964r or later.
-
 For more details on the offline ISP workflow and LED status indicators, refer to the [Nu-Link2/Nu-Link3 User Manual — Offline ISP Programming](https://github.com/OpenNuvoton/Nuvoton_Tools/blob/master/Documents/Nu-Link2_Nu-Link3_User_Manual/docs/05_programming/02_isp_tool/02_offline.md).
 
 ---
@@ -358,17 +356,3 @@ In batch mode, the ISPTool repeats the programming operation until the console w
 ![Batch programming result](./media/image11.png)
 
 
----
-
-# Troubleshooting
-
-| Symptom | Possible Cause | Solution |
-|---------|----------------|----------|
-| **"Open Port Error"** | COM port is in use or does not exist. | Close other applications using the port. Verify the correct COM port is selected. |
-| **"Waiting for device connection" indefinitely** | Target is not in LDROM boot mode, or detect pin is not LOW (USB). | Verify the chip's CONFIG is set to boot from LDROM. For USB, hold the detect pin LOW before powering up. |
-| **"CMD_CONNECT Error"** | ISP bootloader on the target is not running or is incompatible. | Confirm that the LDROM contains a valid ISP bootloader. Re-flash the bootloader if needed. |
-| **CONFIG values shown in red** | On-chip CONFIG differs from the local CONFIG dialog settings. | Click CONFIG to review and adjust settings, or check "CONFIG" before programming to overwrite them. |
-| **"File Size > Flash Size"** | The loaded binary is larger than the target chip's flash region. | Reduce the firmware size or verify that the correct chip is connected. |
-| **Programming fails with "Lost connection!!!"** | Communication was interrupted during programming. | Check cable connections. For UART, ensure stable baud rate. For bridge interfaces, verify Nu-Link2-Pro is connected. Retry the operation. |
-| **Export menu is grayed out** | No device is connected. | Connect to a device first. |
-| **Data Flash / SPI Flash buttons not visible** | The connected chip does not support that flash region. | This is expected behavior. |
