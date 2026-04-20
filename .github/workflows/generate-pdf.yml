@@ -80,6 +80,7 @@ jobs:
 
       - name: Convert with Pandoc
         run: |
+          FILTER="$GITHUB_WORKSPACE/Documents/mermaid-filter.lua"
           cd Documents/${{ matrix.doc_dir }}
           sed -E 's|\./media|'"$PWD"'/media|g' ${{ matrix.doc_file }} | \
             sed 's/^# /\\newpage\n\n# /' | \
@@ -91,7 +92,7 @@ jobs:
               -V geometry:margin=1in \
               --toc --toc-depth=3 --number-sections \
               --resource-path=.:.. \
-              --lua-filter=../mermaid-filter.lua \
+              --lua-filter="$FILTER" \
               --include-before-body=../cover_${{ matrix.doc_dir }}.tex \
               --include-in-header=../header.tex
 
