@@ -2,7 +2,7 @@
 
 The ISP protocol uses fixed-size 64-byte packets for all communication between the host (PC) and the target device. Every command sent by the host receives either an ACK packet or no response (for reset commands). The protocol includes checksum validation and sequential packet numbering to ensure data integrity.
 
-![Figure 1.1 ISP Through USB and UART](./media/image1.png)
+
 
 
 ## Packet Structure
@@ -68,6 +68,8 @@ Each command/ACK exchange uses a packet index to detect duplicates and ordering 
 
 # Communication Interfaces
 
+For wiring details, refer to the **Hardware Connection** chapter of the [Nu-Link2 and Nu-Link3 User Manual](https://github.com/OpenNuvoton/Nuvoton_Tools/blob/master/Documents/Nu-Link2_Nu-Link3_User_Manual/Nu-Link2_Nu-Link3_User_Manual.md).
+
 ## USB HID
 
 | Property | Value |
@@ -92,7 +94,9 @@ Each command/ACK exchange uses a packet index to detect duplicates and ordering 
 
 These interfaces use a Nu-Link2-Pro or Nu-Link3-Pro adapter in ISP-Bridge mode as a USB HID bridge.
 
-To set the adapter to ISP-Bridge mode, connect it to a Windows PC by USB, wait for the PC to detect the device, then edit the `BRIDGE-MODE` parameter to `2` in the file `NU_CFG.TXT`.
+For Nu-Link2-Pro, to set the adapter to ISP-Bridge mode, connect it to a Windows PC by USB, wait for the PC to detect the device, then edit the `BRIDGE-MODE` parameter to `2` in the file `NU_CFG.TXT`.
+
+For the Nu-Link3-Pro, no additional configuration is required.
 
 | Property | Value |
 |----------|-------|
@@ -136,9 +140,6 @@ CAN uses a fundamentally different packet format from all other interfaces. See 
 | Packet size | 64 bytes | 64 bytes |
 
 
-
-For wiring details, refer to the **Hardware Connection** chapter of the [Nu-Link2 and Nu-Link3 User Manual](https://github.com/OpenNuvoton/Nuvoton_Tools/blob/master/Documents/Nu-Link2_Nu-Link3_User_Manual/Nu-Link2_Nu-Link3_User_Manual.md).
-
 ---
 
 # ISP Command Set
@@ -153,12 +154,21 @@ All command codes are 32-bit little-endian values. Timeouts noted below are the 
 
 Handshake command to detect whether ISP is running.
 
-**Command payload:** None (56 zero bytes).
-
-**ACK payload:**
+**Command packet:**
 
 | Byte Offset | Size | Field |
 |:-----------:|:----:|-------|
+| 0–3 | 4 | Command (`0x000000AE`) |
+| 4–7 | 4 | Packet Index |
+| 8–63 | 56 | (unused, zero-padded) |
+
+**ACK packet:**
+
+| Byte Offset | Size | Field |
+|:-----------:|:----:|-------|
+| 0–1 | 2 | Checksum |
+| 2–3 | 2 | (reserved) |
+| 4–7 | 4 | Packet Index |
 | 8–11 | 4 | Device capability ID |
 
 **Behavior:**
@@ -166,20 +176,42 @@ Handshake command to detect whether ISP is running.
 - After a successful connect, the host resets the packet index to 3.
 - The host should send this command repeatedly until the device responds (auto-detect polling).
 
-![Connect Command: Host Side](./media/image45.png)
+```mermaid
+---
+title: "Connect Command: Host Side"
+---
+flowchart TD
+    A([Start]) --> B["Send CMD_CONNECT (0xAE)"]
+    B --> C{ACK received?}
+    C -- No --> D([Return FALSE])
+    C -- Yes --> E[Set packet index = 3]
+    E --> F[Check capability ID]
+    F --> G([Return TRUE])
+```
 
-
-![Connect Command: Device Side](./media/image46.png)
+```mermaid
+---
+title: "Connect Command: Device Side"
+---
+flowchart TD
+    A([Receive packet]) --> B{CMD_CONNECT?}
+    B -- No --> C([Other command handlers])
+    B -- Yes --> D[Reset packet number = 1]
+    D --> E[Send ACK with capability ID]
+    E --> F([Done])
+```
 
 
 ## CMD_SYNC_PACKNO (0xA4)
 
 Resets the packet sequence counter. Must be called before any other command.
 
-**Command payload:**
+**Command packet:**
 
 | Byte Offset | Size | Field |
 |:-----------:|:----:|-------|
+| 0–3 | 4 | Command (`0x000000A4`) |
+| 4–7 | 4 | Packet Index |
 | 8–11 | 4 | Sync value (set to `0x00000004`) |
 
 **Behavior:**
@@ -187,60 +219,91 @@ Resets the packet sequence counter. Must be called before any other command.
 - ACK index validation is skipped for this command.
 - ISP verifies that the Packet Number field equals the Sync value. If they match, ISP increments the packet number by one for the ACK. If they differ, ISP discards the packet and returns packet number zero.
 
-![Sync Packet Number Command: Host Side](./media/image25.png)
-
-
-![Sync Packet Number Command: Device Side](./media/image26.png)
+```mermaid
+---
+title: "Sync Packet Number Command"
+---
+sequenceDiagram
+    participant Host
+    participant Device
+    Host->>Host: Set packet index = 1
+    Host->>Device: CMD_SYNC_PACKNO (PN=1, Sync=4)
+    alt PN matches Sync value
+        Device->>Device: PackNo = Sync + 1
+        Device-->>Host: ACK (RN = Sync + 1)
+    else PN does not match
+        Device->>Device: PackNo = 0
+        Device-->>Host: ACK (RN = 0)
+    end
+    Host->>Host: Skip ACK index validation
+```
 
 
 ## CMD_GET_VERSION (0xA6)
 
 Returns the ISP firmware version.
 
-**Command payload:** None.
-
-**ACK payload:**
+**Command packet:**
 
 | Byte Offset | Size | Field |
 |:-----------:|:----:|-------|
+| 0–3 | 4 | Command (`0x000000A6`) |
+| 4–7 | 4 | Packet Index |
+| 8–63 | 56 | (unused, zero-padded) |
+
+**ACK packet:**
+
+| Byte Offset | Size | Field |
+|:-----------:|:----:|-------|
+| 0–1 | 2 | Checksum |
+| 2–3 | 2 | (reserved) |
+| 4–7 | 4 | Packet Index |
 | 8 | 1 | Firmware version (e.g., `0x30`) |
-
-![Get ISP Version Command: Host Side](./media/image27.png)
-
-
-![Get ISP Version Command: Device Side](./media/image28.png)
 
 
 ## CMD_GET_DEVICEID (0xB1)
 
 Returns the chip's device identification register.
 
-**Command payload:** None.
-
-**ACK payload:**
+**Command packet:**
 
 | Byte Offset | Size | Field |
 |:-----------:|:----:|-------|
+| 0–3 | 4 | Command (`0x000000B1`) |
+| 4–7 | 4 | Packet Index |
+| 8–63 | 56 | (unused, zero-padded) |
+
+**ACK packet:**
+
+| Byte Offset | Size | Field |
+|:-----------:|:----:|-------|
+| 0–1 | 2 | Checksum |
+| 2–3 | 2 | (reserved) |
+| 4–7 | 4 | Packet Index |
 | 8–11 | 4 | Device ID (e.g., `0x00235100` for M2351) |
 
 The host uses the device ID to determine APROM size and resolve the part number from the device database.
-
-![Get Product ID Command: Host Side](./media/image29.png)
-
-
-![Get Product ID Command: Device Side](./media/image30.png)
 
 
 ## CMD_READ_CONFIG (0xA2)
 
 Reads 14 CONFIG register DWORDs from the device.
 
-**Command payload:** None.
-
-**ACK payload:**
+**Command packet:**
 
 | Byte Offset | Size | Field |
 |:-----------:|:----:|-------|
+| 0–3 | 4 | Command (`0x000000A2`) |
+| 4–7 | 4 | Packet Index |
+| 8–63 | 56 | (unused, zero-padded) |
+
+**ACK packet:**
+
+| Byte Offset | Size | Field |
+|:-----------:|:----:|-------|
+| 0–1 | 2 | Checksum |
+| 2–3 | 2 | (reserved) |
+| 4–7 | 4 | Packet Index |
 | 8–11 | 4 | CONFIG[0] |
 | 12–15 | 4 | CONFIG[1] |
 | … | … | … |
@@ -248,67 +311,83 @@ Reads 14 CONFIG register DWORDs from the device.
 
 Total: 56 bytes (14 × 4-byte).
 
-![Read Config Command: Host Side](./media/image21.png)
-
-
-![Read Config Command: Device Side](./media/image22.png)
-
 
 ## CMD_READ_CONFIG_EXT (0xE0)
 
 Reads a single CONFIG register by index. Used for chips with extended configuration (M3331, CM3031 series — 19 CONFIG words).
 
-**Command payload:**
+**Command packet:**
 
 | Byte Offset | Size | Field |
 |:-----------:|:----:|-------|
+| 0–3 | 4 | Command (`0x000000E0`) |
+| 4–7 | 4 | Packet Index |
 | 8–11 | 4 | Config index (for indices 16–18, send index + 16) |
 
-**ACK payload:**
+**ACK packet:**
 
 | Byte Offset | Size | Field |
 |:-----------:|:----:|-------|
+| 0–1 | 2 | Checksum |
+| 2–3 | 2 | (reserved) |
+| 4–7 | 4 | Packet Index |
 | 8–11 | 4 | CONFIG[index] |
 
 ## CMD_UPDATE_CONFIG (0xA1)
 
 Writes 14 CONFIG register DWORDs to the device. Timeout: 25,000 ms.
 
-**Command payload:**
+**Command packet:**
 
 | Byte Offset | Size | Field |
 |:-----------:|:----:|-------|
+| 0–3 | 4 | Command (`0x000000A1`) |
+| 4–7 | 4 | Packet Index |
 | 8–11 | 4 | CONFIG[0] |
 | 12–15 | 4 | CONFIG[1] |
 | … | … | … |
 | 60–63 | 4 | CONFIG[13] |
 
-**ACK payload:** Same layout — the device reads back and returns the written values for verification.
+**ACK packet:** Same layout — the device reads back and returns the written values for verification.
 
 When ISP receives the command, it erases the CONFIG area, programs the new values, reads them back, and returns them in the ACK.
 
-![Update Config Command: Host Side](./media/image19.png)
-
-
-![Update Config Command: Device Side](./media/image20.png)
+```mermaid
+---
+title: "Update Config Command: Device Side"
+---
+flowchart TD
+    A([Receive CMD_UPDATE_CONFIG]) --> B{"Config locked?"}
+    B -- Yes --> F["Send ACK with current CONFIG"]
+    B -- No --> C["Erase CONFIG area"]
+    C --> D["Program new CONFIG values"]
+    D --> E["Read back CONFIG into response"]
+    E --> F
+    F --> G([End])
+```
 
 
 ## CMD_UPDATE_CONFIG_EXT (0xE1)
 
 Writes CONFIG registers in 2-DWORD pairs by index. Used for M3331/CM3031 series. Timeout: 25,000 ms.
 
-**Command payload:**
+**Command packet:**
 
 | Byte Offset | Size | Field |
 |:-----------:|:----:|-------|
+| 0–3 | 4 | Command (`0x000000E1`) |
+| 4–7 | 4 | Packet Index |
 | 8–11 | 4 | Config index (aligned to even, index 16–18 uses index + 16) |
 | 12–15 | 4 | CONFIG[index] |
 | 16–19 | 4 | CONFIG[index + 1] (or `0xFFFFFFFF` if out of range) |
 
-**ACK payload:**
+**ACK packet:**
 
 | Byte Offset | Size | Field |
 |:-----------:|:----:|-------|
+| 0–1 | 2 | Checksum |
+| 2–3 | 2 | (reserved) |
+| 4–7 | 4 | Packet Index |
 | 8–11 | 4 | CONFIG[index] (read back) |
 | 12–15 | 4 | CONFIG[index + 1] (read back) |
 
@@ -316,14 +395,22 @@ Writes CONFIG registers in 2-DWORD pairs by index. Used for M3331/CM3031 series.
 
 Erases APROM, Data Flash, and CONFIG area. CONFIG registers are restored to defaults (`0xFFFFFF7F`, `0x0001F000`). Timeout: 25,000 ms.
 
-**Command payload:** None.
+**Command packet:**
 
-**ACK payload:** None (validation only).
+| Byte Offset | Size | Field |
+|:-----------:|:----:|-------|
+| 0–3 | 4 | Command (`0x000000A3`) |
+| 4–7 | 4 | Packet Index |
+| 8–63 | 56 | (unused, zero-padded) |
 
-![Erase Flash Memory Command: Host Side](./media/image23.png)
+**ACK packet:**
 
-
-![Erase Flash Memory Command: Device Side](./media/image24.png)
+| Byte Offset | Size | Field |
+|:-----------:|:----:|-------|
+| 0–1 | 2 | Checksum |
+| 2–3 | 2 | (reserved) |
+| 4–7 | 4 | Packet Index |
+| 8–63 | 56 | (unused) |
 
 
 ## CMD_UPDATE_APROM (0xA0)
@@ -352,10 +439,35 @@ Each ACK confirms the previous chunk. The host continues sending until all `Tota
 
 When ISP receives the first command packet, it erases the target APROM region (excluding Data Flash), then writes the data to flash. After each chunk, it calculates and returns a checksum in the ACK. When all data has been received, the full data checksum is returned.
 
-![Program APROM Command: Host Side](./media/image17.png)
+```mermaid
+---
+title: "Program APROM Command: Host Side"
+---
+flowchart TD
+    A([Start]) --> B["Send first packet: CMD_UPDATE_APROM (0xA0) with start addr, total len, 48 bytes data"]
+    B --> C["Read ACK"]
+    C --> D{"All data sent?"}
+    D -- No --> E["Send continuation packet with 56 bytes data"]
+    E --> C
+    D -- Yes --> F([End])
+```
 
-
-![Program APROM Command: Device Side](./media/image18.png)
+```mermaid
+---
+title: "Program APROM Command: Device Side"
+---
+flowchart TD
+    A([Receive CMD_UPDATE_APROM]) --> B["Erase target APROM region"]
+    B --> C["Set update APROM flag"]
+    C --> D["Write data chunk to flash"]
+    D --> E["Read back and verify"]
+    E --> F["Send ACK with checksum"]
+    F --> G{"More data expected?"}
+    G -- Yes --> H([Wait for next packet])
+    H --> D
+    G -- No --> I["Return final checksum in ACK"]
+    I --> J([End])
+```
 
 
 ## CMD_UPDATE_DATAFLASH (0xC3)
@@ -364,20 +476,47 @@ Programs Data Flash (NVM). The packet format is identical to `CMD_UPDATE_APROM`.
 
 > **Note:** The *Start Address* parameter in the first packet is ignored by ISP for this command. ISP erases the entire Data Flash and programs from the beginning of the Data Flash region.
 
-![Program Data Flash Command: Host Side](./media/image31.png)
+```mermaid
+---
+title: "Program Data Flash Command: Host Side"
+---
+flowchart TD
+    A([Start]) --> B["Send first packet: CMD_UPDATE_DATAFLASH (0xC3) with total len, 48 bytes data"]
+    B --> C["Read ACK"]
+    C --> D{"All data sent?"}
+    D -- No --> E["Send continuation packet with 56 bytes data"]
+    E --> C
+    D -- Yes --> F([End])
+```
 
-
-![Program Data Flash Command: Device Side](./media/image32.png)
+```mermaid
+---
+title: "Program Data Flash Command: Device Side"
+---
+flowchart TD
+    A([Receive CMD_UPDATE_DATAFLASH]) --> B["Set start address to Data Flash base"]
+    B --> C["Erase Data Flash region"]
+    C --> D["Write data chunk to flash"]
+    D --> E["Read back and verify"]
+    E --> F["Send ACK with checksum"]
+    F --> G{"More data expected?"}
+    G -- Yes --> H([Wait for next packet])
+    H --> D
+    G -- No --> I["Return final checksum in ACK"]
+    I --> J([End])
+```
 
 
 ## CMD_ERASE_SPIFLASH (0xD0)
 
 Erases SPI flash in 64 KB blocks. One command per block. Timeout: 25,000 ms per block.
 
-**Command payload:**
+**Command packet:**
 
 | Byte Offset | Size | Field |
 |:-----------:|:----:|-------|
+| 0–3 | 4 | Command (`0x000000D0`) |
+| 4–7 | 4 | Packet Index |
 | 8–11 | 4 | Block offset (0, 0x10000, 0x20000, …) |
 
 The host loops from `offset = 0` to `total_length`, incrementing by 64 KB each iteration.
@@ -386,10 +525,12 @@ The host loops from `offset = 0` to `total_length`, incrementing by 64 KB each i
 
 Programs SPI Flash in chunks. Timeout: 25,000 ms per chunk.
 
-**Command payload:**
+**Command packet:**
 
 | Byte Offset | Size | Field |
 |:-----------:|:----:|-------|
+| 0–3 | 4 | Command (`0x000000D1`) |
+| 4–7 | 4 | Packet Index |
 | 8–11 | 4 | Address (start + bytes written so far) |
 | 12–15 | 4 | Chunk length (max 48 bytes) |
 | 16–63 | 48 | Data |
@@ -400,103 +541,147 @@ The host loops, sending up to 48 bytes per packet until all data is transmitted.
 
 Instructs the device to reset and boot from APROM.
 
-**Command payload:** None.
+**Command packet:**
+
+| Byte Offset | Size | Field |
+|:-----------:|:----:|-------|
+| 0–3 | 4 | Command (`0x000000AB`) |
+| 4–7 | 4 | Packet Index |
+| 8–63 | 56 | (unused, zero-padded) |
 
 **ACK:** None. The device resets immediately — no response is expected. Wait ~500 ms before assuming the device has rebooted.
 
 **Device behavior:** ISP sets the BS bit to 0 in the ISPCON register and issues SYSRESETREQ to the AIRCR register. The system then reboots from APROM.
-
-![Run APROM Command: Host Side](./media/image33.png)
-
-
-![Run APROM Command: Device Side](./media/image34.png)
 
 
 ## CMD_RUN_LDROM (0xAC)
 
 Instructs the device to reset and boot from LDROM.
 
-**Command payload:** None.
+**Command packet:**
+
+| Byte Offset | Size | Field |
+|:-----------:|:----:|-------|
+| 0–3 | 4 | Command (`0x000000AC`) |
+| 4–7 | 4 | Packet Index |
+| 8–63 | 56 | (unused, zero-padded) |
 
 **ACK:** None. Same behavior as CMD_RUN_APROM.
 
 **Device behavior:** ISP sets the BS bit to 1 in the ISPCON register and issues SYSRESETREQ to the AIRCR register. The system then reboots from LDROM.
-
-![Run LDROM Command: Host Side](./media/image35.png)
-
-
-![Run LDROM Command: Device Side](./media/image36.png)
 
 
 ## CMD_RESET (0xAD)
 
 Instructs the device to perform a hardware reset.
 
-**Command payload:** None.
+**Command packet:**
+
+| Byte Offset | Size | Field |
+|:-----------:|:----:|-------|
+| 0–3 | 4 | Command (`0x000000AD`) |
+| 4–7 | 4 | Packet Index |
+| 8–63 | 56 | (unused, zero-padded) |
 
 **ACK:** None.
 
 **Device behavior:** ISP issues SYSRESETREQ to the AIRCR register. The system reboots.
-
-![Reset Command: Host Side](./media/image37.png)
-
-
-![Reset Command: Device Side](./media/image38.png)
 
 
 ## CMD_WRITE_CHECKSUM (0xC9)
 
 Writes the application program length and checksum into the last 8 bytes of APROM. Issued after APROM update is complete.
 
-**Command payload:**
+**Command packet:**
 
 | Byte Offset | Size | Field |
 |:-----------:|:----:|-------|
+| 0–3 | 4 | Command (`0x000000C9`) |
+| 4–7 | 4 | Packet Index |
 | 8–11 | 4 | Total application length |
 | 12–15 | 4 | Application checksum |
 
-**ACK payload:** None (validation only).
+**ACK packet:**
+
+| Byte Offset | Size | Field |
+|:-----------:|:----:|-------|
+| 0–1 | 2 | Checksum |
+| 2–3 | 2 | (reserved) |
+| 4–7 | 4 | Packet Index |
+| 8–63 | 56 | (unused) |
 
 **Device behavior:** ISP determines the APROM size, then writes the total length and checksum to the last 8 bytes of APROM.
-
-![Write Checksum Command: Host Side](./media/image39.png)
-
-
-![Write Checksum Command: Device Side](./media/image40.png)
 
 
 ## CMD_GET_FLASHMODE (0xCA)
 
 Retrieves the boot selection (BS) bit to determine whether the device is running from APROM or LDROM.
 
-**Command payload:** None.
-
-**ACK payload:**
+**Command packet:**
 
 | Byte Offset | Size | Field |
 |:-----------:|:----:|-------|
+| 0–3 | 4 | Command (`0x000000CA`) |
+| 4–7 | 4 | Packet Index |
+| 8–63 | 56 | (unused, zero-padded) |
+
+**ACK packet:**
+
+| Byte Offset | Size | Field |
+|:-----------:|:----:|-------|
+| 0–1 | 2 | Checksum |
+| 2–3 | 2 | (reserved) |
+| 4–7 | 4 | Packet Index |
 | 8–11 | 4 | Mode: `1` = running in APROM, `2` = running in LDROM |
 
 **Device behavior:** ISP reads the ISPCON register to get the BS bit and returns the mode value. If currently running in APROM, issue `CMD_RUN_LDROM` to reboot into ISP mode.
 
-![Get Flash Mode Command: Host Side](./media/image41.png)
-
-
-![Get Flash Mode Command: Device Side](./media/image42.png)
+```mermaid
+---
+title: "Get Flash Mode Command: Device Side"
+---
+flowchart TD
+    A([Receive CMD_GET_FLASHMODE]) --> B["Read BS bit from ISPCON register"]
+    B --> C{"BS bit = 0?"}
+    C -- Yes --> D["Set mode = 1 (APROM)"]
+    C -- No --> E["Set mode = 2 (LDROM)"]
+    D --> F["Put mode into response bytes 8-11"]
+    E --> F
+    F --> G["Send ACK"]
+    G --> H([End])
+```
 
 
 ## CMD_RESEND_PACKET (0xFF)
 
 Requests the device to re-transmit its last ACK. Used for error recovery.
 
-**Command payload:** None.
+**Command packet:**
+
+| Byte Offset | Size | Field |
+|:-----------:|:----:|-------|
+| 0–3 | 4 | Command (`0x000000FF`) |
+| 4–7 | 4 | Packet Index |
+| 8–63 | 56 | (unused, zero-padded) |
 
 **Behavior:** ACK index validation is skipped for this command. The device echoes its previous response. When ISP receives this command, it erases the data written in the last erroneous packet.
 
-![Resend Packet Command: Host Side](./media/image43.png)
-
-
-![Resend Packet Command: Device Side](./media/image44.png)
+```mermaid
+---
+title: "Resend Packet Command: Device Side"
+---
+flowchart TD
+    A([Receive CMD_RESEND_PACKET]) --> B["Roll back start address by last data length"]
+    B --> C["Add last data length back to total length"]
+    C --> D["Re-read original page data"]
+    D --> E["Erase page"]
+    E --> F["Re-write original data"]
+    F --> G{"Data spans page boundary?"}
+    G -- Yes --> H["Erase next page"]
+    G -- No --> I["Send ACK"]
+    H --> I
+    I --> J([End])
+```
 
 
 ---
@@ -567,14 +752,44 @@ At boot phase, NuMicro® MCU fetches code from either LDROM or APROM, controlled
 - The GPIO detect pin input is LOW (USB), or a packet is received from the ISP Tool (UART/SPI/I²C/RS485/CAN).
 - The system started due to a SYSRESETREQ event.
 
-![USB/UART ISP Booting Flow](./media/image5.png)
+```mermaid
+---
+title: "USB/UART ISP Booting Flow"
+---
+flowchart TD
+    A([Power On / Reset]) --> B{"Boot from LDROM configured?"}
+    B -- No --> C([Boot APROM])
+    B -- Yes --> D["Enter LDROM ISP"]
+    D --> E{"SYSRESETREQ event?"}
+    E -- Yes --> F([Enter ISP Mode])
+    E -- No --> G{"GPIO detect pin LOW (USB) or packet received (UART)?"}
+    G -- Yes --> F
+    G -- No --> H["Wait for trigger"]
+    H --> G
+```
 
 
 ## ISP Main Flow
 
 Once ISP mode is entered, the ISP program enters a command parsing loop, processing commands from the active interface and executing the corresponding operations.
 
-![USB/UART ISP Main Flow](./media/image6.png)
+```mermaid
+---
+title: "USB/UART ISP Main Flow"
+---
+flowchart TD
+    A([Enter ISP Mode]) --> B["Initialize USB/UART interface"]
+    B --> C["Wait for command packet"]
+    C --> D["Validate checksum"]
+    D --> E{"Valid command?"}
+    E -- No --> C
+    E -- Yes --> F["Parse and execute command"]
+    F --> G["Build ACK with checksum and packet index"]
+    G --> H["Send ACK"]
+    H --> I{"Reset command received?"}
+    I -- Yes --> J([Reset / Reboot])
+    I -- No --> C
+```
 
 
 ### Connection Sequence
@@ -641,7 +856,19 @@ Phase 7: Run APROM (optional)
 
 The following diagram shows the overall APROM update command flow:
 
-![Update APROM Command Flow](./media/image47.png)
+```mermaid
+---
+title: "Update APROM Command Flow"
+---
+flowchart TD
+    A([Start]) --> B["CMD_CONNECT"]
+    B --> C["CMD_SYNC_PACKNO"]
+    C --> D["CMD_GET_DEVICEID"]
+    D --> E["CMD_READ_CONFIG"]
+    E --> F["CMD_UPDATE_APROM (multi-packet loop)"]
+    F --> G([End])
+```
+
 
 
 ## Retry and Error Recovery
@@ -663,55 +890,6 @@ FOR each data chunk:
 ```
 
 The `bResendFlag` is set by `ReadFile()` when validation fails, and cleared on the next successful read.
-
----
-
-# Flash Layout and Size Resolution
-
-The host uses two database structures to resolve device capabilities:
-
-## By Device ID (DID)
-
-```c
-struct FLASH_INFO_BY_DID_T {
-    unsigned int uProgramMemorySize;    // Total program flash (bytes)
-    unsigned int uLDSize;               // LDROM size (bytes)
-    unsigned int uRAMSize;              // RAM size (bytes)
-    unsigned int uDID;                  // Device ID
-    unsigned int uFlashType;            // Flash type bitfield:
-    //   Bits [1:0]   — Flash mode (0=shared, 1=separate)
-    //   Bits [9:8]   — Page size encoding
-    //   Bit  4       — Supports PID
-    //   Bit  5       — Supports UID
-    //   Bit  6       — Supports UCID
-    //   Bit  24      — Supports secure code
-    //   Bit  31      — Core type (0=ARM, 1=8051)
-};
-```
-
-## By Product ID (PID)
-
-```c
-struct FLASH_PID_INFO_BASE_T {
-    unsigned int uProgramMemorySize;
-    unsigned int uDataFlashSize;
-    unsigned int uRAMSize;
-    unsigned int uDataFlashStartAddress;
-    unsigned int uISPFlashSize;         // LDROM size
-    unsigned int uPID;
-    unsigned int uFlashType;
-};
-```
-
-## Part Number Lookup
-
-```c
-struct CPartNumID {
-    char szPartNumber[32];       // e.g., "M031LE3AE"
-    unsigned int uID;            // Device ID value
-    unsigned int uProjectCode;   // Identifies which CONFIG dialog to use
-};
-```
 
 ---
 

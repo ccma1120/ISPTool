@@ -1,3 +1,70 @@
+# Introduction
+
+NuMicro® In-System Programming (ISP) allows updating firmware on NuMicro MCUs without removing the chip from the target board. The ISP bootloader runs from LDROM and programs APROM, Data Flash, and CONFIG registers through a variety of communication interfaces.
+
+The following figures illustrate the four distinct ISP connectivity scenarios:
+
+```mermaid
+---
+title: "Figure 1.1 ISP Through USB and UART"
+---
+flowchart LR
+    PC["Host PC (NuvoISP Tool)"] -->|USB HID| MCU["NuMicro MCU (LDROM ISP)"]
+    PC -->|UART 115200| MCU
+    MCU -->|"Program"| APROM["APROM"]
+    MCU -->|"Program"| NVM["Data Flash"]
+    MCU -->|"Read/Write"| CONFIG["CONFIG Registers"]
+```
+
+**Figure 1.1 — USB and UART:** The most common case — direct wired connection between the host PC and the MCU.
+
+```mermaid
+---
+title: "Figure 1.2 ISP Through Nu-Link Bridge"
+---
+flowchart LR
+    PC["Host PC (NuvoISP Tool)"] -->|USB HID| Bridge["Nu-Link2-Pro / Nu-Link3-Pro"]
+    Bridge -->|SPI / I²C / RS485 / CAN / LIN| MCU["NuMicro MCU (LDROM ISP)"]
+    MCU -->|"Program"| APROM["APROM"]
+    MCU -->|"Program"| NVM["Data Flash"]
+    MCU -->|"Read/Write"| CONFIG["CONFIG Registers"]
+```
+
+**Figure 1.2 — Nu-Link Bridge:** For interfaces the PC can't drive directly (SPI, I²C, RS485, CAN, LIN), a Nu-Link adapter bridges USB HID to the target bus.
+
+```mermaid
+---
+title: "Figure 1.3 ISP Through Wi-Fi / BLE"
+---
+flowchart LR
+    PC["Host PC / Mobile App"] -->|"Wi-Fi (TCP/IP) / BLE"| ESP["ESP32-C3 (Wi-Fi / BLE Bridge)"]
+    ESP -->|UART| MCU["NuMicro MCU (LDROM ISP)"]
+    MCU -->|"Program"| APROM["APROM"]
+    MCU -->|"Program"| NVM["Data Flash"]
+    MCU -->|"Read/Write"| CONFIG["CONFIG Registers"]
+```
+
+**Figure 1.3 — Wi-Fi / BLE:** Wireless programming via an external ESP32-C3 bridge, enabling cable-free or mobile-app-driven ISP.
+
+```mermaid
+---
+title: "Figure 1.4 Offline ISP"
+---
+flowchart LR
+    subgraph Preparation ["Preparation (PC)"]
+        PC["Host PC (NuvoISP Tool)"] -->|"Export .isp file"| Bridge["Nu-Link2-Pro / Nu-Link3-Pro"]
+    end
+    subgraph Field ["Field Programming (No PC)"]
+        Bridge2["Nu-Link2-Pro / Nu-Link3-Pro"] -->|"UART / SPI / I²C / RS485 / CAN"| MCU["NuMicro MCU (LDROM ISP)"]
+        MCU -->|"Program"| APROM["APROM"]
+        MCU -->|"Program"| NVM["Data Flash"]
+    end
+```
+
+**Figure 1.4 — Offline ISP:** Field deployment without a PC — the `.isp` file is pre-loaded onto a Nu-Link adapter that programs targets autonomously.
+
+---
+
 # Getting Started
 
 ## System Requirements
@@ -277,7 +344,6 @@ The **Export** menu item (enabled only when connected) generates an offline ISP 
 
 On success, a confirmation dialog appears: **"Settings saved successfully"**.
 
-![Export settings for offline ISP](./media/export_isp_file.png)
 
 
 ## Offline Programming Workflow

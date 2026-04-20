@@ -63,6 +63,16 @@ jobs:
           sudo apt-get install -y tzdata pandoc texlive-xetex texlive-fonts-recommended texlive-lang-chinese
           sudo apt-get install -y fonts-noto-cjk fonts-dejavu
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Mermaid CLI
+        run: |
+          PUPPETEER_SKIP_DOWNLOAD=true npm install -g @mermaid-js/mermaid-cli
+          echo '{"executablePath":"/usr/bin/google-chrome-stable","args":["--no-sandbox","--disable-setuid-sandbox"]}' > /tmp/puppeteer-config.json
+
       - name: Prepare cover page
         run: |
           cd Documents
@@ -81,6 +91,7 @@ jobs:
               -V geometry:margin=1in \
               --toc --toc-depth=3 --number-sections \
               --resource-path=.:.. \
+              --lua-filter=../mermaid-filter.lua \
               --include-before-body=../cover_${{ matrix.doc_dir }}.tex \
               --include-in-header=../header.tex
 
