@@ -68,9 +68,7 @@ Each command/ACK exchange uses a packet index to detect duplicates and ordering 
 
 # Communication Interfaces
 
-For wiring details, refer to the **Hardware Connection** chapter of the [Nu-Link2 and Nu-Link3 User Manual](https://github.com/OpenNuvoton/Nuvoton_Tools/blob/master/Documents/Nu-Link2_Nu-Link3_User_Manual/Nu-Link2_Nu-Link3_User_Manual.md).
-
-## USB HID
+All interfaces except Wi-Fi and BLE communicate through USB HID using the same endpoint:
 
 | Property | Value |
 |----------|-------|
@@ -78,66 +76,48 @@ For wiring details, refer to the **Hardware Connection** chapter of the [Nu-Link
 | Product ID | `0x3F00` (ISP FW version ≥ 0x30) |
 | Packet size | 65 bytes (1-byte report ID + 64-byte payload) |
 
+All interfaces share the same ISP command set (Section 3) except CAN, which uses a reduced command set (Section 4).
+
+For wiring details, refer to the **Hardware Connection** chapter of the [Nu-Link2 and Nu-Link3 User Manual](https://github.com/OpenNuvoton/Nuvoton_Tools/blob/master/Documents/Nu-Link2_Nu-Link3_User_Manual/Nu-Link2_Nu-Link3_User_Manual.md).
+
+## USB HID
+
+Direct connection between the host PC and the target MCU. The MCU's LDROM ISP firmware implements a USB HID device.
 
 ## UART
 
-| Property | Value |
-|----------|-------|
-| Baud rate | 115200 |
-| Data bits | 8 |
-| Parity | None |
-| Stop bits | 1 |
-| Packet size | 64 bytes |
+Serial connection at 115200 baud (8N1). Packet size is 64 bytes (no report ID).
 
+## SPI / I²C / RS485 / LIN / CAN (Bridge)
 
-## SPI / I²C / RS485 / LIN (Bridge)
+These interfaces require a **Nu-Link2-Pro** or **Nu-Link3-Pro** adapter in ISP-Bridge mode. The adapter bridges USB HID on the PC side to the selected physical interface on the target side.
 
-These interfaces use a Nu-Link2-Pro or Nu-Link3-Pro adapter in ISP-Bridge mode as a USB HID bridge.
+**Nu-Link2-Pro setup:** Connect to PC via USB, then set `BRIDGE-MODE=2` in `NU_CFG.TXT` on the device disk.  
+**Nu-Link3-Pro:** No additional configuration required.
 
-For Nu-Link2-Pro, to set the adapter to ISP-Bridge mode, connect it to a Windows PC by USB, wait for the PC to detect the device, then edit the `BRIDGE-MODE` parameter to `2` in the file `NU_CFG.TXT`.
-
-For the Nu-Link3-Pro, no additional configuration is required.
-
-| Property | Value |
-|----------|-------|
-| Packet size | 65 bytes (HID bridge) |
-| Interface ID byte | Byte 2 of the HID report is set to the interface constant |
-
-Interface constants:
+Byte 2 of the HID report selects the target interface:
 
 | Interface | ID |
 |-----------|----|
 | SPI | 3 |
 | I²C | 4 |
 | RS485 | 5 |
+| CAN | 6 |
 | LIN | 7 |
 
-The bridge relays the 64-byte ISP payload to/from the target over the selected physical interface.
-
-
-
-## CAN
-
-CAN uses a fundamentally different packet format from all other interfaces. See [Section 4](#4-can-command-set).
-
-| Property | Value |
-|----------|-------|
-| Transport | Via Nu-Link2-Pro or Nu-Link3-Pro HID bridge |
-| Interface ID byte | 6 |
-| Command set | Reduced (4 commands only) |
-| Checksum | Not used |
-
+> **Note:** CAN uses a fundamentally different packet format and a reduced command set (4 commands only, no checksum). See [Section 4](#4-can-command-set).
 
 ## Wi-Fi / BLE
 
+Wi-Fi and BLE use an external wireless module (e.g., ESP32-C3) as a UART bridge. These interfaces do **not** use USB HID — they communicate over TCP/IP or Bluetooth LE directly, with 64-byte packets.
+
 | Property | Wi-Fi | BLE |
 |----------|-------|-----|
-| Transport | TCP/IP (CTRSP) | Bluetooth LE (CTRSP) |
+| Transport | TCP/IP | Bluetooth LE |
 | Default address | `192.168.4.1:333` | — |
 | Service UUID | — | `0xABF0` |
 | Write characteristic | — | `0xABF1` |
 | Notify characteristic | — | `0xABF2` |
-| Packet size | 64 bytes | 64 bytes |
 
 
 ---
