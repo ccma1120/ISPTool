@@ -65,7 +65,6 @@ Each command/ACK exchange uses a packet index to detect duplicates and ordering 
 | GET_DEVICEID | 5 | 4 |
 | READ_CONFIG | 7 | 6 |
 
----
 
 # Communication Interfaces
 
@@ -120,8 +119,6 @@ Wi-Fi and BLE use an external wireless module (e.g., ESP32-C3) as a UART bridge.
 | Write characteristic | — | `0xABF1` |
 | Notify characteristic | — | `0xABF2` |
 
-
----
 
 # ISP Command Set
 
@@ -301,20 +298,22 @@ Writes 14 CONFIG register DWORDs to the device. Timeout: 25,000 ms.
 
 **ACK packet:** Same layout — the device reads back and returns the written values for verification.
 
-When ISP receives the command, it erases the CONFIG area, programs the new values, reads them back, and returns them in the ACK.
+When ISP receives the command, it checks the security lock state. If locked **and** no prior `CMD_ERASE_ALL` or `CMD_UPDATE_APROM` was received, the update is silently skipped. If unlocked (or if the chip was erased first), ISP erases the CONFIG area, programs the new values, reads them back, and returns them in the ACK.
 
 ```mermaid
 ---
 title: "Update Config Command: Device Side"
 ---
 flowchart TD
-    A([Receive CMD_UPDATE_CONFIG]) --> B{"Config locked?"}
-    B -- Yes --> F["Send ACK with current CONFIG"]
-    B -- No --> C["Erase CONFIG area"]
-    C --> D["Program new CONFIG values"]
-    D --> E["Read back CONFIG into response"]
-    E --> F
-    F --> G([End])
+    A([Receive CMD_UPDATE_CONFIG]) --> B{"Security locked?"}
+    B -- Yes --> C{"Prior ERASE_ALL or UPDATE_APROM?"}
+    C -- No --> G["Send ACK with current CONFIG (unchanged)"]
+    C -- Yes --> D["Erase CONFIG area"]
+    B -- No --> D
+    D --> E["Program new CONFIG values"]
+    E --> F["Read back CONFIG into response"]
+    F --> G
+    G --> H([End])
 ```
 
 
@@ -570,27 +569,25 @@ Requests the device to re-transmit its last ACK. Used for error recovery.
 | 4–7 | 4 | Packet Index |
 | 8–63 | 56 | (unused, zero-padded) |
 
-**Behavior:** ACK index validation is skipped for this command. The device echoes its previous response. When ISP receives this command, it erases the data written in the last erroneous packet.
+**Behavior:** ACK index validation is skipped for this command. The device rolls back the last chunk written during APROM or Data Flash programming: it reverses the write position and remaining-length counters, erases the affected flash page, and restores its original content. The host can then re-send the failed chunk.
 
 ```mermaid
 ---
 title: "Resend Packet Command: Device Side"
 ---
 flowchart TD
-    A([Receive CMD_RESEND_PACKET]) --> B["Roll back start address by last data length"]
-    B --> C["Add last data length back to total length"]
-    C --> D["Re-read original page data"]
-    D --> E["Erase page"]
-    E --> F["Re-write original data"]
-    F --> G{"Data spans page boundary?"}
-    G -- Yes --> H["Erase next page"]
+    A([Receive CMD_RESEND_PACKET]) --> B["Roll back write position by last chunk size"]
+    B --> C["Restore remaining-length counter"]
+    C --> D["Read original page data into buffer"]
+    D --> E["Erase flash page"]
+    E --> F["Re-write original data from buffer"]
+    F --> G{"Last chunk crossed page boundary?"}
+    G -- Yes --> H["Erase next page too"]
     G -- No --> I["Send ACK"]
     H --> I
     I --> J([End])
 ```
 
-
----
 
 # CAN Command Set
 
@@ -647,31 +644,32 @@ FOR each 8-byte block at cur_addr:
   4. cur_addr += 8
 ```
 
----
 
 # Programming Workflow
 
 ## ISP Booting Flow
 
-At boot phase, NuMicro® MCU fetches code from either LDROM or APROM, controlled by the CONFIG0 register. The “boot from LDROM” option must be configured before running ISP programming. ISP enters ISP mode if:
+At boot phase, NuMicro® MCU fetches code from either LDROM or APROM, controlled by the CONFIG0 register. The "boot from LDROM" option must be configured before running ISP programming. The ISP entry condition depends on the interface:
 
-- The GPIO detect pin input is LOW (USB), or a packet is received from the ISP Tool (UART/SPI/I²C/RS485/CAN).
-- The system started due to a SYSRESETREQ event.
+- **USB HID:** The GPIO detect pin must be LOW to enter ISP mode. If HIGH, the firmware jumps to APROM.
+- **UART / SPI / I²C / RS485 / CAN:** The firmware waits up to 300 ms for a `CMD_CONNECT` packet. If no packet arrives within the timeout, the firmware jumps to APROM.
 
 ```mermaid
 ---
-title: "USB/UART ISP Booting Flow"
+title: "ISP Booting Flow"
 ---
 flowchart TD
     A([Power On / Reset]) --> B{"Boot from LDROM configured?"}
     B -- No --> C([Boot APROM])
-    B -- Yes --> D["Enter LDROM ISP"]
-    D --> E{"SYSRESETREQ event?"}
-    E -- Yes --> F([Enter ISP Mode])
-    E -- No --> G{"GPIO detect pin LOW (USB) or packet received (UART)?"}
-    G -- Yes --> F
-    G -- No --> H["Wait for trigger"]
-    H --> G
+    B -- Yes --> D["Enter LDROM ISP firmware"]
+    D --> E{"USB or serial interface?"}
+    E -- USB --> F{"GPIO detect pin LOW?"}
+    F -- Yes --> I([Enter ISP Mode])
+    F -- No --> C
+    E -- Serial --> G["Wait up to 300 ms for CMD_CONNECT"]
+    G --> H{"Packet received?"}
+    H -- Yes --> I
+    H -- No --> C
 ```
 
 
@@ -681,10 +679,10 @@ Once ISP mode is entered, the ISP program enters a command parsing loop, process
 
 ```mermaid
 ---
-title: "USB/UART ISP Main Flow"
+title: "ISP Main Flow"
 ---
 flowchart TD
-    A([Enter ISP Mode]) --> B["Initialize USB/UART interface"]
+    A([Enter ISP Mode]) --> B["Initialize communication interface"]
     B --> C["Wait for command packet"]
     C --> D["Validate checksum"]
     D --> E{"Valid command?"}
@@ -710,7 +708,7 @@ flowchart TD
 7. ReadConfig()         — Read CONFIG registers
 ```
 
-For M3331/CM3031 chips (device ID mask `0xFFFFF000` equals `0x03300000` or `0x06300000`), use `ReadConfig_Ext()` in a loop for indices 0–18 instead of `ReadConfig()`.
+If the chip has more than 14 CONFIG registers, use `ReadConfig_Ext()` in a loop for indices 0–18 instead of `ReadConfig()` (e.g., M3331/CM3031 series).
 
 ### Device Identification
 
@@ -721,11 +719,7 @@ After reading the device ID, the host resolves:
 3. **Capabilities** — SPI Flash support, extended CONFIG support, and 64-bit programming mode are detected from the device ID and connect response.
 
 
-**Flash Size Resolution**  
-The flash layout depends on the CONFIG0 register's DFEN (Data Flash Enable) bit:
-
-- **DFEN = 0 (enabled):** Data Flash is carved from the end of program memory. CONFIG1 bits [23:0] define the Data Flash start address (page-aligned). APROM size = Data Flash address − APROM base. NVM size = total program memory − APROM size.
-- **DFEN = 1 (disabled):** APROM uses the entire program memory. NVM size = 0.
+4. **Flash size resolution** — The flash layout (APROM size, Data Flash address/size) depends on the CONFIG registers and varies by chip series. Refer to the chip's TRM for details.
 
 ### Programming Sequence
 
@@ -760,42 +754,9 @@ Phase 7: Run APROM (optional)
   └─ CMD_RUN_APROM
 ```
 
-The following diagram shows the overall APROM update command flow:
-
-```mermaid
----
-title: "Update APROM Command Flow"
----
-flowchart TD
-    A([Start]) --> B["CMD_CONNECT"]
-    B --> C["CMD_SYNC_PACKNO"]
-    C --> D["CMD_GET_DEVICEID"]
-    D --> E["CMD_READ_CONFIG"]
-    E --> F["CMD_UPDATE_APROM (multi-packet loop)"]
-    F --> G([End])
-```
-
-
-
 ## Retry and Error Recovery
 
-During APROM and Data Flash programming, each chunk allows up to 10 retries:
-
-```
-FOR each data chunk:
-  retries = 10
-  LOOP:
-    Send CMD_UPDATE_APROM / CMD_UPDATE_DATAFLASH chunk
-    IF ACK checksum or index mismatch:
-      retries -= 1
-      IF retries == 0 OR this is the first chunk:
-        → ABORT with error
-      CMD_RESEND_PACKET
-    ELSE:
-      → SUCCESS, advance to next chunk
-```
-
-The `bResendFlag` is set by `ReadFile()` when validation fails, and cleared on the next successful read.
+During APROM and Data Flash programming, each chunk allows up to 10 retries. If the ACK checksum or packet index does not match, the host sends `CMD_RESEND_PACKET` to roll back the failed write and re-sends the chunk. If all retries are exhausted (or the failure occurs on the first chunk), the operation is aborted with an error.
 
 ---
 
