@@ -68,21 +68,21 @@ Each command/ACK exchange uses a packet index to detect duplicates and ordering 
 
 # Communication Interfaces
 
-All interfaces except Wi-Fi and BLE communicate through USB HID using the same endpoint:
-
-| Property | Value |
-|----------|-------|
-| Vendor ID | `0x0416` (Nuvoton) |
-| Product ID | `0x3F00` (ISP FW version ≥ 0x30) |
-| Packet size | 65 bytes (1-byte report ID + 64-byte payload) |
-
 All interfaces share the same ISP command set (Section 3) except CAN, which uses a reduced command set (Section 4).
+
+For distinct ISP connectivity scenarios, see the [Introduction](https://github.com/ccma1120/ISPTool/blob/master/Documents/NuMicro_ISP_Programming_User_Manual/NuMicro_ISP_Programming_User_Manual.md#introduction) section of the User Manual.
 
 For wiring details, refer to the **Hardware Connection** chapter of the [Nu-Link2 and Nu-Link3 User Manual](https://github.com/OpenNuvoton/Nuvoton_Tools/blob/master/Documents/Nu-Link2_Nu-Link3_User_Manual/Nu-Link2_Nu-Link3_User_Manual.md).
 
 ## USB HID
 
 Direct connection between the host PC and the target MCU. The MCU's LDROM ISP firmware implements a USB HID device.
+
+| Property | Value |
+|----------|-------|
+| Vendor ID | `0x0416` (Nuvoton) |
+| Product ID | `0x3F00` (ISP FW version ≥ 0x30) |
+| Packet size | 65 bytes (1-byte report ID + 64-byte payload) |
 
 ## UART
 
@@ -155,31 +155,7 @@ Handshake command to detect whether ISP is running.
 - If capability ID is `0x001540EF`, the device supports SPI Flash commands.
 - After a successful connect, the host resets the packet index to 3.
 - The host should send this command repeatedly until the device responds (auto-detect polling).
-
-```mermaid
----
-title: "Connect Command: Host Side"
----
-flowchart TD
-    A([Start]) --> B["Send CMD_CONNECT (0xAE)"]
-    B --> C{ACK received?}
-    C -- No --> D([Return FALSE])
-    C -- Yes --> E[Set packet index = 3]
-    E --> F[Check capability ID]
-    F --> G([Return TRUE])
-```
-
-```mermaid
----
-title: "Connect Command: Device Side"
----
-flowchart TD
-    A([Receive packet]) --> B{CMD_CONNECT?}
-    B -- No --> C([Other command handlers])
-    B -- Yes --> D[Reset packet number = 1]
-    D --> E[Send ACK with capability ID]
-    E --> F([Done])
-```
+- On the device side, receiving CMD_CONNECT resets the internal packet counter to 1.
 
 
 ## CMD_SYNC_PACKNO (0xA4)
@@ -192,31 +168,22 @@ Resets the packet sequence counter. Must be called before any other command.
 |:-----------:|:----:|-------|
 | 0–3 | 4 | Command (`0x000000A4`) |
 | 4–7 | 4 | Packet Index |
-| 8–11 | 4 | Sync value (set to `0x00000004`) |
+| 8–11 | 4 | Sync value (initial packet index, e.g., `0x00000001`) |
+
+**ACK packet:**
+
+| Byte Offset | Size | Field |
+|:-----------:|:----:|-------|
+| 0–1 | 2 | Checksum |
+| 2–3 | 2 | (reserved) |
+| 4–7 | 4 | Packet Index |
+| 8–63 | 56 | (unused) |
 
 **Behavior:**
 - The host resets its packet index to 1 before sending this command.
+- The Sync payload (bytes 8–11) is set to the current packet index (1).
+- The device unconditionally sets its internal packet counter to the Sync value.
 - ACK index validation is skipped for this command.
-- ISP verifies that the Packet Number field equals the Sync value. If they match, ISP increments the packet number by one for the ACK. If they differ, ISP discards the packet and returns packet number zero.
-
-```mermaid
----
-title: "Sync Packet Number Command"
----
-sequenceDiagram
-    participant Host
-    participant Device
-    Host->>Host: Set packet index = 1
-    Host->>Device: CMD_SYNC_PACKNO (PN=1, Sync=4)
-    alt PN matches Sync value
-        Device->>Device: PackNo = Sync + 1
-        Device-->>Host: ACK (RN = Sync + 1)
-    else PN does not match
-        Device->>Device: PackNo = 0
-        Device-->>Host: ACK (RN = 0)
-    end
-    Host->>Host: Skip ACK index validation
-```
 
 
 ## CMD_GET_VERSION (0xA6)
@@ -456,36 +423,6 @@ Programs Data Flash (NVM). The packet format is identical to `CMD_UPDATE_APROM`.
 
 > **Note:** The *Start Address* parameter in the first packet is ignored by ISP for this command. ISP erases the entire Data Flash and programs from the beginning of the Data Flash region.
 
-```mermaid
----
-title: "Program Data Flash Command: Host Side"
----
-flowchart TD
-    A([Start]) --> B["Send first packet: CMD_UPDATE_DATAFLASH (0xC3) with total len, 48 bytes data"]
-    B --> C["Read ACK"]
-    C --> D{"All data sent?"}
-    D -- No --> E["Send continuation packet with 56 bytes data"]
-    E --> C
-    D -- Yes --> F([End])
-```
-
-```mermaid
----
-title: "Program Data Flash Command: Device Side"
----
-flowchart TD
-    A([Receive CMD_UPDATE_DATAFLASH]) --> B["Set start address to Data Flash base"]
-    B --> C["Erase Data Flash region"]
-    C --> D["Write data chunk to flash"]
-    D --> E["Read back and verify"]
-    E --> F["Send ACK with checksum"]
-    F --> G{"More data expected?"}
-    G -- Yes --> H([Wait for next packet])
-    H --> D
-    G -- No --> I["Return final checksum in ACK"]
-    I --> J([End])
-```
-
 
 ## CMD_ERASE_SPIFLASH (0xD0)
 
@@ -615,21 +552,6 @@ Retrieves the boot selection (BS) bit to determine whether the device is running
 | 8–11 | 4 | Mode: `1` = running in APROM, `2` = running in LDROM |
 
 **Device behavior:** ISP reads the ISPCON register to get the BS bit and returns the mode value. If currently running in APROM, issue `CMD_RUN_LDROM` to reboot into ISP mode.
-
-```mermaid
----
-title: "Get Flash Mode Command: Device Side"
----
-flowchart TD
-    A([Receive CMD_GET_FLASHMODE]) --> B["Read BS bit from ISPCON register"]
-    B --> C{"BS bit = 0?"}
-    C -- Yes --> D["Set mode = 1 (APROM)"]
-    C -- No --> E["Set mode = 2 (LDROM)"]
-    D --> F["Put mode into response bytes 8-11"]
-    E --> F
-    F --> G["Send ACK"]
-    G --> H([End])
-```
 
 
 ## CMD_RESEND_PACKET (0xFF)
