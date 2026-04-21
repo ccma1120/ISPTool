@@ -348,7 +348,7 @@ HBRUSH CNuvoISPDlg::OnCtlColor(CDC *pDC, CWnd *pWnd, UINT nCtlColor)
 {
     HBRUSH hbr = CDialog::OnCtlColor(pDC, pWnd, nCtlColor);
 
-    // TODO:  ¦b¦¹ÅÜ§ó DC ªº¥ô¦óÄÝ©Ê
+    // TODO:  ï¿½bï¿½ï¿½ï¿½Ü§ï¿½ DC ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý©ï¿½
     switch (pWnd->GetDlgCtrlID())
     {
         case IDC_STATIC_CONNECT:
@@ -435,7 +435,7 @@ HBRUSH CNuvoISPDlg::OnCtlColor(CDC *pDC, CWnd *pWnd, UINT nCtlColor)
             break;
     }
 
-    // TODO:  ¦pªG¹w³]­È¨Ã«D·Q­nªº¡A«h¶Ç¦^¤£¦Pªºµ§¨ê
+    // TODO:  ï¿½pï¿½Gï¿½wï¿½]ï¿½È¨Ã«Dï¿½Qï¿½nï¿½ï¿½ï¿½Aï¿½hï¿½Ç¦^ï¿½ï¿½ï¿½Pï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     return hbr;
 }
 
@@ -957,7 +957,7 @@ void CNuvoISPDlg::OnPaint()
     }
     else
     {
-        //Åã¥ÜLogo
+        //ï¿½ï¿½ï¿½Logo
         //CDialog::OnPaint();
         CPaintDC   dc(this);   //Device context
         CDC   dcMem;
@@ -969,7 +969,7 @@ void CNuvoISPDlg::OnPaint()
         CBitmap   *pbmpOld = dcMem.SelectObject(&bmpBackground);
         CRect MainRect;
         GetClientRect(&MainRect);
-        //§âdcMem«þ¨©¨ìdcªº¬ÛÀ³¦ì¸m
+        //ï¿½ï¿½dcMemï¿½ï¿½ï¿½ï¿½ï¿½ï¿½dcï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½m
         //dc.StretchBlt(0,0,MainRect.Width(),bitmap.bmHeight,&dcMem,0,0,
         dc.StretchBlt(0, 0, bitmap.bmWidth, bitmap.bmHeight, &dcMem, 0, 0,
                       bitmap.bmWidth, bitmap.bmHeight, SRCCOPY); //bitmap.bmHeight = 44
@@ -1241,13 +1241,13 @@ LRESULT CNuvoISPDlg::OnDeviceChange(WPARAM  nEventType, LPARAM  dwData)
     {
         case DBT_DEVICEARRIVAL:
             // A device has been inserted and is now available.
-            //¡K
+            //ï¿½K
             break;
 
         case DBT_DEVICEREMOVECOMPLETE:
 
             // Device has been removed.
-            //¡K
+            //ï¿½K
             if (pdbi->dbcc_devicetype == DBT_DEVTYP_DEVICEINTERFACE)
             {
                 if (DevPathName.CompareNoCase(m_ISPLdDev.GetDevPathName()) == 0)

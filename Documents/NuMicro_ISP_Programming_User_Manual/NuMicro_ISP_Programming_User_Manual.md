@@ -30,7 +30,7 @@ flowchart LR
     MCU -->|"Read/Write"| CONFIG["CONFIG Registers"]
 ```
 
-**Figure 1.2 — Nu-Link Bridge:** For interfaces the PC can't drive directly (SPI, I²C, RS485, CAN, LIN), a Nu-Link adapter bridges USB HID to the target bus.
+**Figure 1.2 — Nu-Link Bridge:** For interfaces the PC can't drive directly (SPI, I²C, RS485, CAN, LIN), a Nu-Link2-Pro or Nu-Link3-Pro adapter bridges USB HID to the target bus.
 
 ```mermaid
 ---
@@ -61,7 +61,7 @@ flowchart LR
     end
 ```
 
-**Figure 1.4 — Offline ISP:** Field deployment without a PC — the `.isp` file is pre-loaded onto a Nu-Link adapter that programs targets autonomously.
+**Figure 1.4 — Offline ISP:** Field deployment without a PC — the `.isp` file is pre-loaded onto a Nu-Link2-Pro or Nu-Link3-Pro adapter that programs targets autonomously.
 
 ---
 
@@ -72,8 +72,8 @@ flowchart LR
 - **OS:** Windows (7 or later)
 - **Hardware:** One of the following connection setups:
   - USB cable — for direct USB HID connection to target
-  - Serial cable — for UART connection
-  - Nu-Link2-Pro Adaptor — required for SPI, I²C, RS485, CAN, and LIN interfaces (set to ISP-Bridge mode)
+  - Serial cable — for UART connection (or USB cable for Virtual COM)
+  - Nu-Link2-Pro or Nu-Link3-Pro Adaptor — required for SPI, I²C, RS485, CAN, and LIN interfaces (set to ISP-Bridge mode)
   - Wi-Fi or BLE — for wireless connection
 
 The target chip must have an ISP bootloader programmed into LDROM. The chip must be configured to boot from LDROM.
@@ -125,7 +125,7 @@ Use the **Interface** dropdown at the top of the window. The available options a
 | Interface | Connection Method |
 |-----------|------------------|
 | **USB** | Direct USB HID connection to the target chip |
-| **UART** | Serial COM port connection |
+| **UART** | Serial COM port or Virtual COM port (VCOM) connection |
 | **SPI** | Via Nu-Link2-Pro or Nu-Link3-Pro ISP-Bridge |
 | **I2C** | Via Nu-Link2-Pro or Nu-Link3-Pro ISP-Bridge |
 | **RS485** | Via Nu-Link2-Pro or Nu-Link3-Pro ISP-Bridge |
@@ -162,9 +162,9 @@ Depending on the selected interface, additional controls appear:
 - **BLE:** A device name field appears showing the connected BLE device.
 - **All others:** No additional configuration is needed.
 
-SPI, I²C, RS485, CAN, and LIN interfaces are supported via a Nu-Link2-Pro adapter in ISP-Bridge mode. For interface connection details, refer to 'Hardware Connection' Chapter of the [Nu-Link2 and Nu-Link3 User Manual](https://github.com/OpenNuvoton/Nuvoton_Tools/tree/master/Documents/Nu-Link2_Nu-Link3_User_Manual).
+SPI, I²C, RS485, CAN, and LIN interfaces are supported via a Nu-Link2-Pro or Nu-Link3-Pro adapter in ISP-Bridge mode. For interface connection details, refer to 'Hardware Connection' Chapter of the [Nu-Link2 and Nu-Link3 User Manual](https://github.com/OpenNuvoton/Nuvoton_Tools/tree/master/Documents/Nu-Link2_Nu-Link3_User_Manual).
 
-![Connection Interface via Nu-Link2-Pro ISP-Bridge](./media/image5.png)
+![Connection Interface via Nu-Link2-Pro or Nu-Link3-Pro ISP-Bridge](./media/image5.png)
 
 
 ### Establishing a Connection
@@ -172,7 +172,7 @@ SPI, I²C, RS485, CAN, and LIN interfaces are supported via a Nu-Link2-Pro adapt
 1. Select the desired interface and configure any options.
 2. Prepare the target device:
    - **USB:** Ensure the detect pin is held LOW.
-   - **UART / SPI / I²C / RS485 / CAN / LIN:** Ensure the target is booted into LDROM.
+   - **UART / SPI / I²C / RS485 / CAN / LIN:** Ensure the target is booted into LDROM, and that ISPTool can connect before the LDROM timeout expires (otherwise the MCU will boot to APROM).
    - **SPI / I²C / RS485 / CAN / LIN:** Ensure Nu-Link3-Pro or Nu-Link2-Pro is connected and Nu-Link2-Pro should be in ISP-Bridge mode.
 3. Click **Connect**.
 
@@ -279,7 +279,7 @@ Before starting, select the desired operations using the checkboxes:
 |----------|-------------|
 | **APROM** | Program the loaded APROM binary to flash. Requires a file to be loaded. |
 | **Data Flash** | Program the loaded Data Flash binary. Requires a file to be loaded. |
-| **CONFIG** | Write the CONFIG register values set in the CONFIG dialog. When Security Lock is enabled (CBS bit in CONFIG[0] = 0), the only ISP operation permitted on the chip is Erase All, which also removes the lock. |
+| **CONFIG** | Write the CONFIG register values set in the CONFIG dialog. When Security Lock is enabled, the only ISP operation permitted on the chip is Erase All, which also removes the lock. |
 | **SPI Flash** | Program the loaded SPI Flash binary. Visible only for supported chips. |
 | **Erase All** | Erase the entire chip (APROM, Data Flash, CONFIG) before programming. |
 | **Erase SPI Flash** | Erase only the SPI Flash. Visible only for supported chips. |
@@ -355,7 +355,8 @@ After exporting the `.isp` file, follow these steps:
 3. **Verify:** Check the `OFL_ISP` file on the disk to confirm the stored programming information.
 4. **Program offline:** Disconnect from the PC. Connect the Nu-Link to the target board via the appropriate bridge interface. Press the **Offline Button** to start programming.
 
-> **Notes:**
+> **Notes:**  
+
 > - Offline and online ISP modes can be used interchangeably but must not be used simultaneously.
 > - To update the offline data, overwrite the existing `.isp` file on the disk. The disk will remount once the update is complete.
 > - To clear the offline ISP data, create a blank file named `CLR_ISP.ACT` in the root directory of the Nu-Link disk.

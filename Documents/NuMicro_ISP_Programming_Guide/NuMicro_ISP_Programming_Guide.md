@@ -70,7 +70,7 @@ Each command/ACK exchange uses a packet index to detect duplicates and ordering 
 
 All interfaces share the same ISP command set (Section 3) except CAN, which uses a reduced command set (Section 4).
 
-For distinct ISP connectivity scenarios, see the [Introduction](https://github.com/ccma1120/ISPTool/blob/master/Documents/NuMicro_ISP_Programming_User_Manual/NuMicro_ISP_Programming_User_Manual.md#introduction) section of the User Manual.
+For distinct ISP connectivity scenarios, see the [Introduction](https://github.com/OpenNuvoton/ISPTool/blob/master/Documents/NuMicro_ISP_Programming_User_Manual/NuMicro_ISP_Programming_User_Manual.md#introduction) section of the User Manual.
 
 For wiring details, refer to the **Hardware Connection** chapter of the [Nu-Link2 and Nu-Link3 User Manual](https://github.com/OpenNuvoton/Nuvoton_Tools/blob/master/Documents/Nu-Link2_Nu-Link3_User_Manual/Nu-Link2_Nu-Link3_User_Manual.md).
 
