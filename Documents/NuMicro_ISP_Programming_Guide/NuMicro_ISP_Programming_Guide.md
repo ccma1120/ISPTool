@@ -50,6 +50,7 @@ The CAN interface does not use checksum validation.
 Each command/ACK exchange uses a packet index to detect duplicates and ordering errors.
 
 **Rules:**
+
 - The host initializes the packet index to `1` after `CMD_SYNC_PACKNO`.
 - After each successful `WriteFile`, the host increments the index by 2.
 - The ACK packet's index must equal the command's index minus 1.
@@ -80,7 +81,7 @@ Direct connection between the host PC and the target MCU. The MCU's LDROM ISP fi
 
 | Property | Value |
 |----------|-------|
-| Vendor ID | `0x0416` (Nuvoton) |
+| Vendor ID | `0x0416` |
 | Product ID | `0x3F00` (ISP FW version ≥ 0x30) |
 | Packet size | 65 bytes (1-byte report ID + 64-byte payload) |
 
@@ -127,6 +128,7 @@ Wi-Fi and BLE use an external wireless module (e.g., ESP32-C3) as a UART bridge.
 All command codes are 32-bit little-endian values. Timeouts noted below are the host-side defaults.
 
 **Timeout constants:**
+
 - Standard: 5,000 ms
 - Long (erase/program): 25,000 ms
 
@@ -152,6 +154,7 @@ Handshake command to detect whether ISP is running.
 | 8–11 | 4 | Device capability ID |
 
 **Behavior:**
+
 - If capability ID is `0x001540EF`, the device supports SPI Flash commands.
 - After a successful connect, the host resets the packet index to 3.
 - The host should send this command repeatedly until the device responds (auto-detect polling).
@@ -180,6 +183,7 @@ Resets the packet sequence counter. Must be called before any other command.
 | 8–63 | 56 | (unused) |
 
 **Behavior:**
+
 - The host resets its packet index to 1 before sending this command.
 - The Sync payload (bytes 8–11) is set to the current packet index (1).
 - The device unconditionally sets its internal packet counter to the Sync value.
